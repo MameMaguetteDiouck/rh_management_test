@@ -16,4 +16,5 @@ model User {
 
   createdTasks   Task[] @relation("CreatedTasks")
   validatedTasks Task[] @relation("ValidatedTasks")
+  refreshTokens  RefreshToken[]
 }
