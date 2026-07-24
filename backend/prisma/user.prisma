@@ -1,0 +1,19 @@
+enum Role {
+  COLLABORATOR
+  MANAGER
+  ADMINISTRATOR
+}
+
+model User {
+  id        String   @id @default(uuid())
+  lastName  String
+  firstName String
+  email     String   @unique
+  password  String
+  role      Role     @default(COLLABORATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdTasks   Task[] @relation("CreatedTasks")
+  validatedTasks Task[] @relation("ValidatedTasks")
+}

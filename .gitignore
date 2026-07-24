@@ -1,33 +1,45 @@
 # Dependencies
 node_modules/
-**/node_modules/
 
 # Build outputs
 dist/
-**/dist/
-.angular/cache/
+.angular/
+/out-tsc/
+/bazel-out/
+*.tsbuildinfo
 
 # Environment variables
 .env
 .env.local
-**/.env
-**/.env.local
 
-# Prisma
+# Prisma (client v7 généré par le generator, jamais commité)
+**/generated/prisma/
 **/prisma/migrations/dev.db*
 
 # Logs
 *.log
 npm-debug.log*
+testem.log
 
 # OS files
 .DS_Store
 Thumbs.db
 
+
 # IDE
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/mcp.json
 .idea/
 
 # Testing
 coverage/
+__screenshots__/
+
+# Misc (Angular CLI)
+/connect.lock
+/libpeerconnection.log
+/typings
