@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -12,6 +13,8 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Public } from '../common/decorators/public.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { JwtPayload } from './types/jwt-payload.interface';
 import {
   ACCESS_COOKIE_NAME,
   ACCESS_TOKEN_TTL_MS,
@@ -63,6 +66,11 @@ export class AuthController {
     res.clearCookie(ACCESS_COOKIE_NAME, { path: '/' });
     res.clearCookie(REFRESH_COOKIE_NAME, { path: '/auth' });
     return { success: true };
+  }
+
+  @Get('me')
+  me(@CurrentUser() user: JwtPayload) {
+    return this.authService.me(user.sub);
   }
 
   private setAuthCookies(

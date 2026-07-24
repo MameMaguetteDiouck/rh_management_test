@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
+import { PrismaService } from '../../prisma/prisma.service';
 import { JwtPayload } from '../types/jwt-payload.interface';
 import { ACCESS_COOKIE_NAME } from '../auth.constants';
 
@@ -12,7 +13,10 @@ function cookieExtractor(req: Request): string | null {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     super({
       // Cookie httpOnly en priorité (jamais lu par le JS du frontend) ; header Authorization en repli pour Postman/curl.
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -24,7 +28,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload): JwtPayload {
+  async validate(payload: JwtPayload): Promise<JwtPayload> {
+    // Revérifié à chaque requête (pas seulement au login) : un compte désactivé doit perdre l'accès immédiatement, sans attendre l'expiration du token.
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { deactivatedAt: true },
+    });
+    if (!user || user.deactivatedAt) {
+      throw new UnauthorizedException('Compte désactivé');
+    }
     return payload;
   }
 }

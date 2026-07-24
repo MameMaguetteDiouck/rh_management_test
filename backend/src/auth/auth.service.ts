@@ -31,6 +31,11 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Identifiants invalides');
     }
+    if (user.deactivatedAt) {
+      throw new UnauthorizedException(
+        'Ce compte a été désactivé. Contactez un administrateur.',
+      );
+    }
 
     const passwordMatches = await bcrypt.compare(dto.password, user.password);
     if (!passwordMatches) {
@@ -70,7 +75,25 @@ export class AuthService {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: payload.sub },
     });
+    if (user.deactivatedAt) {
+      throw new UnauthorizedException(
+        'Ce compte a été désactivé. Contactez un administrateur.',
+      );
+    }
     return this.issueTokens(user);
+  }
+
+  async me(userId: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+    });
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    };
   }
 
   async logout(rawRefreshToken: string | undefined) {
