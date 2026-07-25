@@ -4,7 +4,7 @@ Application de gestion de tâches avec un processus de validation par rôle : un
 
 ## Stack technique
 
-- **Frontend** : Angular *(à venir — le backend est fonctionnel, l'UI n'est pas encore construite)*
+- **Frontend** : Angular (Tailwind CSS)
 - **Backend** : NestJS
 - **Base de données** : PostgreSQL, via Prisma ORM
 - **Authentification** : JWT (access token + refresh token, cookies `httpOnly`)
@@ -31,8 +31,9 @@ docker compose up -d
 - **PostgreSQL** (port `5432`)
 - **[Adminer](http://localhost:8080)** — interface web pour explorer la base
 - **Backend NestJS** (port `3000`) — au démarrage du conteneur, les migrations Prisma s'appliquent et le seed de démo s'exécute automatiquement, avant que l'API ne se lance.
+- **[Frontend Angular](http://localhost:4200)** (port `4200`) — build de production servi par nginx.
 
-Rien d'autre à faire : `http://localhost:3000` répond dès que les trois conteneurs sont prêts (`docker compose ps` pour vérifier que `rh_management_db` est bien `healthy`).
+Rien d'autre à faire : **[http://localhost:4200](http://localhost:4200)** ouvre l'application dès que les conteneurs sont prêts (`docker compose ps` pour vérifier que `rh_management_db` est bien `healthy`).
 
 > Pour repartir de zéro (efface toutes les données, y compris la base) : `docker compose down -v && docker compose up -d`.
 
