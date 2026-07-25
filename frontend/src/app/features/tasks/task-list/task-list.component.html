@@ -1,0 +1,149 @@
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h1 class="text-lg font-semibold text-slate-900">{{ title() }}</h1>
+    <a
+      routerLink="/tasks/new"
+      class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+    >
+      Nouvelle tâche
+    </a>
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-slate-500">Chargement…</p>
+  } @else if (tasks().length === 0) {
+    <p class="text-sm text-slate-500">Aucune tâche pour le moment.</p>
+  } @else {
+    <ul class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+      @for (task of tasks(); track task.id) {
+        <li class="px-4 py-3">
+          @if (editingId() === task.id) {
+            <app-task-form [taskId]="task.id" (saved)="onEdited($event)" />
+            <button
+              type="button"
+              (click)="editingId.set(null)"
+              class="mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Annuler
+            </button>
+          } @else {
+            <div class="flex items-center justify-between gap-4">
+              <button type="button" (click)="toggleExpand(task)" class="min-w-0 flex-1 text-left">
+                <p class="truncate text-sm font-medium text-slate-900">{{ task.title }}</p>
+                <p class="truncate text-sm text-slate-500">{{ task.description }}</p>
+              </button>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <span class="rounded-full px-2.5 py-1 text-xs font-medium" [class]="statusBadgeClasses[task.status]">
+                  {{ statusLabels[task.status] }}
+                </span>
+
+                @if (canSubmit(task)) {
+                  <button
+                    type="button"
+                    (click)="submitTask(task)"
+                    class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+                  >
+                    Soumettre
+                  </button>
+                }
+                @if (canEdit(task)) {
+                  <button
+                    type="button"
+                    (click)="editingId.set(task.id)"
+                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Modifier
+                  </button>
+                }
+                @if (canDelete(task)) {
+                  <button
+                    type="button"
+                    (click)="deleteTask(task)"
+                    class="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                  >
+                    Supprimer
+                  </button>
+                }
+                @if (canValidate(task)) {
+                  <button
+                    type="button"
+                    (click)="validateTask(task)"
+                    class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+                  >
+                    Valider
+                  </button>
+                }
+                @if (canReject(task) && rejectingId() !== task.id) {
+                  <button
+                    type="button"
+                    (click)="rejectingId.set(task.id)"
+                    class="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                  >
+                    Rejeter
+                  </button>
+                }
+
+                <button
+                  type="button"
+                  (click)="toggleExpand(task)"
+                  class="rounded-lg px-2 py-1.5 text-sm text-slate-400 hover:bg-slate-100"
+                  [attr.aria-label]="expandedId() === task.id ? 'Réduire' : 'Voir les détails'"
+                >
+                  {{ expandedId() === task.id ? '▲' : '▼' }}
+                </button>
+              </div>
+            </div>
+
+            @if (expandedId() === task.id) {
+              <div class="mt-3 space-y-2 rounded-lg bg-slate-50 p-3 text-sm">
+                <p class="whitespace-pre-wrap text-slate-700">{{ task.description }}</p>
+                @if (task.rejectionReason) {
+                  <div class="rounded-lg bg-red-50 p-2 text-red-700">
+                    <p class="font-medium">Motif du rejet</p>
+                    <p>{{ task.rejectionReason }}</p>
+                  </div>
+                }
+                <p class="text-xs text-slate-400">
+                  Créée le {{ task.createdAt | date: 'dd/MM/yyyy HH:mm' }} · Dernière modification le
+                  {{ task.updatedAt | date: 'dd/MM/yyyy HH:mm' }}
+                </p>
+              </div>
+            }
+
+            @if (rejectingId() === task.id) {
+              <div class="mt-3 flex items-end gap-2 rounded-lg border border-slate-200 p-3">
+                <div class="flex-1 space-y-1">
+                  <label [for]="'reason-' + task.id" class="block text-sm font-medium text-slate-700">
+                    Motif du rejet
+                  </label>
+                  <input
+                    [id]="'reason-' + task.id"
+                    type="text"
+                    [ngModel]="rejectionReason()"
+                    (ngModelChange)="rejectionReason.set($event)"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  (click)="confirmReject(task)"
+                  class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                >
+                  Confirmer
+                </button>
+                <button
+                  type="button"
+                  (click)="rejectingId.set(null)"
+                  class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  Annuler
+                </button>
+              </div>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

@@ -64,4 +64,8 @@ export class AuthService {
   clearSession(): void {
     this.currentUserSignal.set(null);
   }
+
+  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/users/me/password`, payload);
+  }
 }

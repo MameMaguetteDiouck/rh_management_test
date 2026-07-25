@@ -1,0 +1,39 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-sm">
+  <div class="space-y-1">
+    <label for="title" class="block text-sm font-medium text-slate-700">Titre</label>
+    <input
+      id="title"
+      type="text"
+      formControlName="title"
+      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+    />
+    @if (form.controls.title.invalid && form.controls.title.touched) {
+      <p class="text-sm text-red-600">Le titre est requis.</p>
+    }
+  </div>
+
+  <div class="space-y-1">
+    <label for="description" class="block text-sm font-medium text-slate-700">Description</label>
+    <textarea
+      id="description"
+      formControlName="description"
+      rows="4"
+      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+    ></textarea>
+    @if (form.controls.description.invalid && form.controls.description.touched) {
+      <p class="text-sm text-red-600">La description est requise.</p>
+    }
+  </div>
+
+  @if (errorMessage()) {
+    <p role="alert" class="text-sm text-red-600">{{ errorMessage() }}</p>
+  }
+
+  <button
+    type="submit"
+    [disabled]="submitting()"
+    class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+  >
+    {{ submitting() ? 'Enregistrement…' : 'Enregistrer' }}
+  </button>
+</form>

@@ -1,0 +1,80 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="max-w-md space-y-4 rounded-xl bg-white p-6 shadow-sm">
+  <div class="grid grid-cols-2 gap-3">
+    <div class="space-y-1">
+      <label for="firstName" class="block text-sm font-medium text-slate-700">Prénom</label>
+      <input
+        id="firstName"
+        type="text"
+        formControlName="firstName"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      />
+    </div>
+    <div class="space-y-1">
+      <label for="lastName" class="block text-sm font-medium text-slate-700">Nom</label>
+      <input
+        id="lastName"
+        type="text"
+        formControlName="lastName"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      />
+    </div>
+  </div>
+
+  <div class="space-y-1">
+    <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+    <input
+      id="email"
+      type="email"
+      formControlName="email"
+      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+    />
+  </div>
+
+  @if (!isEdit()) {
+    <div class="space-y-1">
+      <label for="password" class="block text-sm font-medium text-slate-700">Mot de passe initial</label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      />
+    </div>
+  }
+
+  <div class="space-y-1">
+    <label for="role" class="block text-sm font-medium text-slate-700">Rôle</label>
+    <select
+      id="role"
+      formControlName="role"
+      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+    >
+      @for (r of roles; track r) {
+        <option [value]="r">{{ roleLabels[r] }}</option>
+      }
+    </select>
+  </div>
+
+  @if (errorMessage()) {
+    <p role="alert" class="text-sm text-red-600">{{ errorMessage() }}</p>
+  }
+
+  <div class="flex gap-2">
+    <button
+      type="submit"
+      [disabled]="submitting()"
+      class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+    >
+      {{ submitting() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+    @if (isEdit()) {
+      <button
+        type="button"
+        (click)="cancelled.emit()"
+        class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+      >
+        Annuler
+      </button>
+    }
+  </div>
+</form>
