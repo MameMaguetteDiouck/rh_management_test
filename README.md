@@ -12,24 +12,42 @@ Application de gestion de tâches avec un processus de validation par rôle : un
 
 ## Prérequis
 
-- [Node.js](https://nodejs.org/) 20+
 - Docker (Docker Desktop, ou Docker Engine accessible en ligne de commande — si vous êtes sous Windows avec Docker installé dans WSL, lancez les commandes `docker compose` depuis un terminal WSL)
+- [Node.js](https://nodejs.org/) 20+ — uniquement nécessaire pour l'option B (développement en local avec rechargement à chaud)
 
 ## Installation
 
-### 1. Base de données (Docker Compose)
+### Option A — Tout via Docker Compose (le plus simple)
 
 À la racine du projet :
 
 ```bash
 cp .env.example .env
-# éditer .env si besoin (les valeurs par défaut fonctionnent pour du local)
+# éditer .env si besoin — remplacer au moins JWT_SECRET/JWT_REFRESH_SECRET par des valeurs aléatoires (ex. openssl rand -hex 64)
 docker compose up -d
 ```
 
-Ça démarre PostgreSQL (port `5432`) et [Adminer](http://localhost:8080) (interface web pour explorer la base, port `8080`).
+Ça construit et démarre tout :
+- **PostgreSQL** (port `5432`)
+- **[Adminer](http://localhost:8080)** — interface web pour explorer la base
+- **Backend NestJS** (port `3000`) — au démarrage du conteneur, les migrations Prisma s'appliquent et le seed de démo s'exécute automatiquement, avant que l'API ne se lance.
 
-### 2. Backend
+Rien d'autre à faire : `http://localhost:3000` répond dès que les trois conteneurs sont prêts (`docker compose ps` pour vérifier que `rh_management_db` est bien `healthy`).
+
+> Pour repartir de zéro (efface toutes les données, y compris la base) : `docker compose down -v && docker compose up -d`.
+
+### Option B — Backend en local avec rechargement à chaud (pour développer)
+
+Utile si vous modifiez le code backend et voulez du live-reload plutôt que de reconstruire l'image à chaque changement.
+
+À la racine, démarrer uniquement la base :
+
+```bash
+cp .env.example .env
+docker compose up -d postgres adminer
+```
+
+Puis le backend :
 
 ```bash
 cd backend
@@ -38,8 +56,8 @@ cp .env.example .env
 ```
 
 Dans `backend/.env`, deux points d'attention :
-- `DATABASE_URL` doit correspondre aux identifiants PostgreSQL définis dans le `.env` racine à l'étape 1 (même `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB`/`POSTGRES_PORT`).
-- `JWT_SECRET` et `JWT_REFRESH_SECRET` : à remplacer par des valeurs aléatoires (ex. `openssl rand -hex 64`), même en local.
+- `DATABASE_URL` doit correspondre aux identifiants PostgreSQL définis dans le `.env` racine (même `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB`/`POSTGRES_PORT`), avec `localhost` comme hôte (pas `postgres`, ce nom de service n'existe que dans le réseau Docker).
+- `JWT_SECRET` et `JWT_REFRESH_SECRET` : à remplacer par des valeurs aléatoires.
 
 Puis :
 
@@ -47,8 +65,6 @@ Puis :
 npx prisma migrate deploy   # crée les tables + rejoue automatiquement le seed
 npm run start:dev
 ```
-
-L'API démarre sur `http://localhost:3000`.
 
 > Pour repartir sur une base vide avec les données de démo fraîches à tout moment : `npx prisma migrate reset` (⚠️ efface tout le contenu existant de la base).
 
