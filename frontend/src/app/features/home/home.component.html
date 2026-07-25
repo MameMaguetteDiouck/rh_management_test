@@ -1,0 +1,4 @@
+@if (currentUser(); as user) {
+  <p>Connecté en tant que {{ user.firstName }} {{ user.lastName }} ({{ user.role }})</p>
+  <button type="button" (click)="logout()">Déconnexion</button>
+}
