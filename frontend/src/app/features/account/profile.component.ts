@@ -1,16 +1,23 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
+import { ROLE_LABELS } from '../../core/models/role-labels';
 
 @Component({
-  selector: 'app-change-password',
+  selector: 'app-profile',
   imports: [ReactiveFormsModule],
-  templateUrl: './change-password.component.html',
+  templateUrl: './profile.component.html',
 })
-export class ChangePasswordComponent {
+export class ProfileComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+
+  protected readonly currentUser = this.authService.currentUser;
+  protected readonly roleLabel = computed(() => {
+    const role = this.currentUser()?.role;
+    return role ? ROLE_LABELS[role] : '';
+  });
 
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);

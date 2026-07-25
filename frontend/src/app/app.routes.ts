@@ -21,8 +21,7 @@ export const routes: Routes = [
       },
       {
         path: 'account',
-        loadComponent: () =>
-          import('./features/account/change-password.component').then((m) => m.ChangePasswordComponent),
+        loadComponent: () => import('./features/account/profile.component').then((m) => m.ProfileComponent),
       },
       {
         path: 'admin',

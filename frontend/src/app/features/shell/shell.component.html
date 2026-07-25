@@ -25,18 +25,42 @@
       </div>
 
       @if (currentUser(); as user) {
-        <div class="flex items-center gap-3">
-          <div class="text-right leading-tight">
-            <p class="text-sm font-medium text-slate-900">{{ user.firstName }} {{ user.lastName }}</p>
-            <p class="text-xs text-slate-500">{{ roleLabel() }}</p>
-          </div>
+        <div class="relative" data-user-menu>
           <button
             type="button"
-            (click)="logout()"
-            class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            (click)="toggleMenu()"
+            class="flex items-center gap-2 rounded-md py-1.5 pl-1.5 pr-2 hover:bg-slate-100"
           >
-            Déconnexion
+            <span
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700"
+            >
+              {{ initials() }}
+            </span>
+            <span class="text-right leading-tight">
+              <span class="block text-sm font-medium text-slate-900">{{ user.firstName }} {{ user.lastName }}</span>
+              <span class="block text-xs text-slate-500">{{ roleLabel() }}</span>
+            </span>
+            <span class="text-xs text-slate-400">{{ menuOpen() ? '▲' : '▼' }}</span>
           </button>
+
+          @if (menuOpen()) {
+            <div class="absolute right-0 top-full z-10 mt-2 w-44 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+              <a
+                routerLink="/account"
+                (click)="closeMenu()"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Profil
+              </a>
+              <button
+                type="button"
+                (click)="logout()"
+                class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              >
+                Déconnexion
+              </button>
+            </div>
+          }
         </div>
       }
     </div>
