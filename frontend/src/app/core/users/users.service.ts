@@ -32,4 +32,8 @@ export class UsersService {
   resetPassword(id: string, newPassword: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/password`, { newPassword });
   }
+
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }

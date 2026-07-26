@@ -49,23 +49,27 @@ async function main() {
     },
   });
 
-  await prisma.task.createMany({
-    data: [
-      {
-        title: 'Rédiger le rapport mensuel',
-        description: 'Compiler les chiffres de juillet',
-        status: 'DRAFT',
-        creatorId: collaborator.id,
-      },
-      {
-        title: 'Mettre à jour le CRM',
-        description: 'Ajouter les nouveaux contacts prospects',
-        status: 'SUBMITTED',
-        creatorId: collaborator.id,
-      },
-    ],
-    skipDuplicates: true,
-  });
+  // pas de contrainte unique sur Task, donc skipDuplicates ne servirait à rien ici :
+  // on vérifie nous-mêmes pour ne pas dupliquer les tâches de démo à chaque redémarrage
+  const hasDemoTasks = await prisma.task.count({ where: { creatorId: collaborator.id } });
+  if (hasDemoTasks === 0) {
+    await prisma.task.createMany({
+      data: [
+        {
+          title: 'Rédiger le rapport mensuel',
+          description: 'Compiler les chiffres de juillet',
+          status: 'DRAFT',
+          creatorId: collaborator.id,
+        },
+        {
+          title: 'Mettre à jour le CRM',
+          description: 'Ajouter les nouveaux contacts prospects',
+          status: 'SUBMITTED',
+          creatorId: collaborator.id,
+        },
+      ],
+    });
+  }
 
   console.log('Seed terminé :', {
     admin: admin.email,

@@ -12,12 +12,19 @@ import { Role, TaskStatus } from '../../generated/prisma/client';
 
 const EDITABLE_STATUSES: TaskStatus[] = [TaskStatus.DRAFT, TaskStatus.REJECTED];
 
+// pour que le manager/admin voient qui a créé/assigné/validé une tâche sans requête à part
+const TASK_ATTRIBUTION_INCLUDE = {
+  creator: { select: { id: true, firstName: true, lastName: true } },
+  assignedBy: { select: { id: true, firstName: true, lastName: true } },
+  validator: { select: { id: true, firstName: true, lastName: true } },
+} as const;
+
 @Injectable()
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(user: JwtPayload, dto: CreateTaskDto) {
-    const isReviewer = user.role === Role.MANAGER;
+    const isReviewer = user.role === Role.MANAGER || user.role === Role.ADMINISTRATOR;
     let creatorId = user.sub;
     let assignedById: string | null = null;
 
@@ -39,12 +46,16 @@ export class TasksService {
         creatorId,
         assignedById,
       },
+      include: TASK_ATTRIBUTION_INCLUDE,
     });
   }
 
   findAll(user: JwtPayload) {
     if (user.role === Role.ADMINISTRATOR) {
-      return this.prisma.task.findMany({ orderBy: { updatedAt: 'desc' } });
+      return this.prisma.task.findMany({
+        orderBy: { updatedAt: 'desc' },
+        include: TASK_ATTRIBUTION_INCLUDE,
+      });
     }
 
     if (user.role === Role.MANAGER) {
@@ -60,17 +71,22 @@ export class TasksService {
           ],
         },
         orderBy: { updatedAt: 'desc' },
+        include: TASK_ATTRIBUTION_INCLUDE,
       });
     }
 
     return this.prisma.task.findMany({
       where: { creatorId: user.sub },
       orderBy: { updatedAt: 'desc' },
+      include: TASK_ATTRIBUTION_INCLUDE,
     });
   }
 
   async findOne(id: string, user: JwtPayload) {
-    const task = await this.prisma.task.findUnique({ where: { id } });
+    const task = await this.prisma.task.findUnique({
+      where: { id },
+      include: TASK_ATTRIBUTION_INCLUDE,
+    });
     if (
       !task ||
       (user.role === Role.COLLABORATOR && task.creatorId !== user.sub)
@@ -82,7 +98,11 @@ export class TasksService {
 
   async update(id: string, user: JwtPayload, dto: UpdateTaskDto) {
     const task = await this.getOwnEditableTask(id, user);
-    return this.prisma.task.update({ where: { id: task.id }, data: dto });
+    return this.prisma.task.update({
+      where: { id: task.id },
+      data: dto,
+      include: TASK_ATTRIBUTION_INCLUDE,
+    });
   }
 
   async remove(id: string, user: JwtPayload) {
@@ -92,6 +112,13 @@ export class TasksService {
 
   async submit(id: string, user: JwtPayload) {
     const task = await this.getOwnEditableTask(id, user);
+    // contrairement à update/remove, la règle de statut s'applique même à l'admin :
+    // soumettre est une transition de workflow, pas une action de gestion de données
+    if (!EDITABLE_STATUSES.includes(task.status)) {
+      throw new ForbiddenException(
+        'Cette tâche ne peut plus être modifiée dans son état actuel',
+      );
+    }
     // on efface l'ancien rejet, sinon il traînerait après la resoumission
     return this.prisma.task.update({
       where: { id: task.id },
@@ -100,6 +127,7 @@ export class TasksService {
         rejectionReason: null,
         validatorId: null,
       },
+      include: TASK_ATTRIBUTION_INCLUDE,
     });
   }
 
@@ -108,6 +136,7 @@ export class TasksService {
     return this.prisma.task.update({
       where: { id: task.id },
       data: { status: TaskStatus.APPROVED, validatorId: user.sub },
+      include: TASK_ATTRIBUTION_INCLUDE,
     });
   }
 
@@ -120,6 +149,7 @@ export class TasksService {
         validatorId: user.sub,
         rejectionReason: dto.rejectionReason,
       },
+      include: TASK_ATTRIBUTION_INCLUDE,
     });
   }
 
@@ -128,13 +158,15 @@ export class TasksService {
     if (!task) {
       throw new NotFoundException('Tâche introuvable');
     }
-    if (task.creatorId !== user.sub) {
-      throw new ForbiddenException('Cette tâche ne vous appartient pas');
-    }
-    if (!EDITABLE_STATUSES.includes(task.status)) {
-      throw new ForbiddenException(
-        'Cette tâche ne peut plus être modifiée dans son état actuel',
-      );
+    if (user.role !== Role.ADMINISTRATOR) {
+      if (task.creatorId !== user.sub) {
+        throw new ForbiddenException('Cette tâche ne vous appartient pas');
+      }
+      if (!EDITABLE_STATUSES.includes(task.status)) {
+        throw new ForbiddenException(
+          'Cette tâche ne peut plus être modifiée dans son état actuel',
+        );
+      }
     }
     return task;
   }

@@ -5,6 +5,7 @@ import { Role, User } from '../../../../core/models/user.model';
 import { ROLE_LABELS } from '../../../../core/models/role-labels';
 import { PasswordInputComponent } from '../../../../shared/password-input/password-input.component';
 import { extractErrorMessage } from '../../../../core/http/error-message';
+import { ToastService } from '../../../../core/notifications/toast.service';
 
 const ROLES: Role[] = ['COLLABORATOR', 'MANAGER', 'ADMINISTRATOR'];
 
@@ -21,6 +22,7 @@ export class UserFormComponent implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly usersService = inject(UsersService);
+  private readonly toastService = inject(ToastService);
 
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly submitting = signal(false);
@@ -66,6 +68,10 @@ export class UserFormComponent implements OnInit {
     request.subscribe({
       next: (saved) => {
         this.submitting.set(false);
+        // saved.emit() ci-dessous déclenche souvent une navigation qui détruit ce composant :
+        // on décale l'affichage du toast d'un tick pour ne pas le perdre dans la transition de route.
+        const message = user ? 'Utilisateur mis à jour.' : 'Utilisateur créé.';
+        setTimeout(() => this.toastService.success(message));
         this.saved.emit(saved);
       },
       error: (err: unknown) => {

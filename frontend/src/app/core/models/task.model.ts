@@ -1,5 +1,11 @@
 export type TaskStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
 
+export interface TaskAttribution {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -11,6 +17,9 @@ export interface Task {
   creatorId: string;
   validatorId: string | null;
   assignedById: string | null;
+  creator: TaskAttribution;
+  validator: TaskAttribution | null;
+  assignedBy: TaskAttribution | null;
 }
 
 export interface CreateTaskPayload {

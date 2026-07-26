@@ -6,6 +6,7 @@ import { User } from '../../core/models/user.model';
 const EDITABLE_STATUSES: TaskStatus[] = ['DRAFT', 'REJECTED'];
 
 function isOwnEditableTask(task: Task, user: User): boolean {
+  if (user.role === 'ADMINISTRATOR') return true;
   return task.creatorId === user.id && EDITABLE_STATUSES.includes(task.status);
 }
 
@@ -18,11 +19,14 @@ export function canDelete(task: Task, user: User): boolean {
 }
 
 export function canSubmit(task: Task, user: User): boolean {
+  // soumettre est une transition de workflow : le statut compte même pour l'admin
+  // (contrairement à éditer/supprimer, qui sont de la gestion de données)
+  if (user.role === 'ADMINISTRATOR') return EDITABLE_STATUSES.includes(task.status);
   return isOwnEditableTask(task, user);
 }
 
 function isReviewer(user: User): boolean {
-  return user.role === 'MANAGER';
+  return user.role === 'MANAGER' || user.role === 'ADMINISTRATOR';
 }
 
 export function canValidate(task: Task, user: User): boolean {

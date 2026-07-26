@@ -63,7 +63,7 @@
                   <span class="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">Actif</span>
                   <button
                     type="button"
-                    (click)="deactivate(user.id)"
+                    (click)="deactivate(user)"
                     class="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
                   >
                     Désactiver
@@ -83,6 +83,16 @@
                 >
                   Modifier
                 </button>
+                @if (user.id !== currentUserId()) {
+                  <button
+                    type="button"
+                    (click)="deleteUser(user)"
+                    class="flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                  >
+                    <app-icon name="trash" class="h-4 w-4" />
+                    Supprimer
+                  </button>
+                }
               </div>
             </div>
 

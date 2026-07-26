@@ -7,6 +7,10 @@ import { ROLE_LABELS } from '../../../../core/models/role-labels';
 import { UserFormComponent } from '../user-form/user-form.component';
 import { IconComponent } from '../../../../shared/icon/icon.component';
 import { PasswordInputComponent } from '../../../../shared/password-input/password-input.component';
+import { ToastService } from '../../../../core/notifications/toast.service';
+import { ConfirmService } from '../../../../core/notifications/confirm.service';
+import { extractErrorMessage } from '../../../../core/http/error-message';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 type RoleFilter = Role | 'ALL';
 
@@ -17,6 +21,11 @@ type RoleFilter = Role | 'ALL';
 })
 export class UserListComponent implements OnInit {
   private readonly usersService = inject(UsersService);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
+  private readonly authService = inject(AuthService);
+
+  protected readonly currentUserId = computed(() => this.authService.currentUser()?.id ?? null);
 
   protected readonly users = signal<User[]>([]);
   protected readonly loading = signal(true);
@@ -55,12 +64,60 @@ export class UserListComponent implements OnInit {
     });
   }
 
-  protected deactivate(id: string): void {
-    this.usersService.deactivate(id).subscribe(() => this.load());
+  protected async deactivate(user: User): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Désactiver ce compte ?',
+      message: `${user.firstName} ${user.lastName} ne pourra plus se connecter.`,
+      confirmLabel: 'Désactiver',
+      danger: true,
+    });
+    if (!confirmed) return;
+
+    this.usersService.deactivate(user.id).subscribe({
+      next: () => {
+        this.load();
+        this.toastService.warning('Compte désactivé.');
+      },
+      error: (err: unknown) => this.toastService.error(extractErrorMessage(err)),
+    });
+  }
+
+  protected async deleteUser(user: User): Promise<void> {
+    const choice = await this.confirmService.chooseUserDeletion({
+      title: 'Supprimer ce compte ?',
+      message: `Toutes les tâches créées par ${user.firstName} ${user.lastName} seront définitivement supprimées avec le compte. Si vous voulez juste l'empêcher de se connecter sans perdre ses données, désactivez-le à la place.`,
+    });
+
+    if (choice === 'cancel') return;
+
+    if (choice === 'deactivate') {
+      this.usersService.deactivate(user.id).subscribe({
+        next: () => {
+          this.load();
+          this.toastService.warning('Compte désactivé.');
+        },
+        error: (err: unknown) => this.toastService.error(extractErrorMessage(err)),
+      });
+      return;
+    }
+
+    this.usersService.remove(user.id).subscribe({
+      next: () => {
+        this.load();
+        this.toastService.warning('Compte et tâches associées supprimés.');
+      },
+      error: (err: unknown) => this.toastService.error(extractErrorMessage(err)),
+    });
   }
 
   protected activate(id: string): void {
-    this.usersService.activate(id).subscribe(() => this.load());
+    this.usersService.activate(id).subscribe({
+      next: () => {
+        this.load();
+        this.toastService.success('Compte réactivé.');
+      },
+      error: (err: unknown) => this.toastService.error(extractErrorMessage(err)),
+    });
   }
 
   protected onUserSaved(): void {
@@ -70,9 +127,13 @@ export class UserListComponent implements OnInit {
 
   protected confirmResetPassword(id: string): void {
     if (!this.newPassword().trim()) return;
-    this.usersService.resetPassword(id, this.newPassword()).subscribe(() => {
-      this.resettingId.set(null);
-      this.newPassword.set('');
+    this.usersService.resetPassword(id, this.newPassword()).subscribe({
+      next: () => {
+        this.resettingId.set(null);
+        this.newPassword.set('');
+        this.toastService.success('Mot de passe réinitialisé.');
+      },
+      error: (err: unknown) => this.toastService.error(extractErrorMessage(err)),
     });
   }
 }

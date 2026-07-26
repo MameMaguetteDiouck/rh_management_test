@@ -16,12 +16,8 @@ import { Public } from '../common/decorators/public.decorator';
 import { SkipPasswordCheck } from '../common/decorators/skip-password-check.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from './types/jwt-payload.interface';
-import {
-  ACCESS_COOKIE_NAME,
-  ACCESS_TOKEN_TTL_MS,
-  REFRESH_COOKIE_NAME,
-  REFRESH_TOKEN_TTL_MS,
-} from './auth.constants';
+import { REFRESH_COOKIE_NAME, ACCESS_COOKIE_NAME } from './auth.constants';
+import { setAuthCookies } from './set-auth-cookies';
 
 @Controller('auth')
 export class AuthController {
@@ -36,7 +32,7 @@ export class AuthController {
   ) {
     const { accessToken, refreshToken, user } =
       await this.authService.login(dto);
-    this.setAuthCookies(res, accessToken, refreshToken);
+    setAuthCookies(res, accessToken, refreshToken);
     return { user };
   }
 
@@ -54,7 +50,7 @@ export class AuthController {
 
     const { accessToken, refreshToken, user } =
       await this.authService.refresh(token);
-    this.setAuthCookies(res, accessToken, refreshToken);
+    setAuthCookies(res, accessToken, refreshToken);
     return { user };
   }
 
@@ -73,29 +69,5 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: JwtPayload) {
     return this.authService.me(user.sub);
-  }
-
-  private setAuthCookies(
-    res: Response,
-    accessToken: string,
-    refreshToken: string,
-  ) {
-    const secure = process.env.NODE_ENV === 'production';
-
-    res.cookie(ACCESS_COOKIE_NAME, accessToken, {
-      httpOnly: true,
-      secure,
-      sameSite: 'strict',
-      path: '/',
-      maxAge: ACCESS_TOKEN_TTL_MS,
-    });
-
-    res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
-      httpOnly: true,
-      secure,
-      sameSite: 'strict',
-      path: '/auth',
-      maxAge: REFRESH_TOKEN_TTL_MS,
-    });
   }
 }

@@ -17,7 +17,10 @@ export type IconName =
   | 'eye'
   | 'eye-off'
   | 'mail'
-  | 'lock';
+  | 'lock'
+  | 'check'
+  | 'alert-circle'
+  | 'info';
 
 @Component({
   selector: 'app-icon',
@@ -97,6 +100,19 @@ export type IconName =
         @case ('lock') {
           <rect x="4" y="10" width="16" height="10" rx="2" />
           <path d="M7 10V7a5 5 0 0 1 10 0v3" />
+        }
+        @case ('check') {
+          <path d="M20 6L9 17l-5-5" />
+        }
+        @case ('alert-circle') {
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v5" />
+          <path d="M12 16h.01" />
+        }
+        @case ('info') {
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8h.01" />
+          <path d="M12 12v4" />
         }
       }
     </svg>

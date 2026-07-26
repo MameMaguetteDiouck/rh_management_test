@@ -64,6 +64,25 @@ export class UsersService {
     return toPublicUser(user);
   }
 
+  async remove(id: string): Promise<void> {
+    await this.prisma.$transaction([
+      // les tâches créées par la personne n'ont plus de sens sans elle
+      this.prisma.task.deleteMany({ where: { creatorId: id } }),
+      // en revanche les tâches des autres où elle apparaît juste comme
+      // manager assignant/validant doivent survivre, juste détachées
+      this.prisma.task.updateMany({
+        where: { assignedById: id },
+        data: { assignedById: null },
+      }),
+      this.prisma.task.updateMany({
+        where: { validatorId: id },
+        data: { validatorId: null },
+      }),
+      this.prisma.refreshToken.deleteMany({ where: { userId: id } }),
+      this.prisma.user.delete({ where: { id } }),
+    ]);
+  }
+
   async changeOwnPassword(userId: string, dto: ChangePasswordDto) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },

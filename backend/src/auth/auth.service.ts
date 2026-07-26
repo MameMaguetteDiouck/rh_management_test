@@ -107,7 +107,7 @@ export class AuthService {
     });
   }
 
-  private async issueTokens(user: PublicUser & { password?: string }) {
+  async issueTokens(user: PublicUser & { password?: string }) {
     const payload: SignedJwtPayload = {
       sub: user.id,
       email: user.email,

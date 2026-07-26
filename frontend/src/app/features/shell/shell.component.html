@@ -1,4 +1,4 @@
-<div class="flex h-screen bg-slate-50">
+<div class="flex h-screen bg-white">
   @if (sidebarOpen()) {
     <div
       (click)="closeSidebar()"
@@ -12,41 +12,48 @@
     [class.-translate-x-full]="!sidebarOpen()"
     [class.md:w-16]="!sidebarOpen()"
   >
-    <div class="flex h-14 items-center justify-between border-b border-slate-100 px-3">
+    <div
+      class="flex h-16 items-center border-b border-slate-100 px-3"
+      [class.justify-between]="sidebarOpen()"
+      [class.justify-center]="!sidebarOpen()"
+    >
       @if (sidebarOpen()) {
-        <span class="truncate text-base font-semibold text-brand-700">RH Perspectives</span>
+        <img src="branding/logo_old.png" alt="RH Perspectives" class="h-8 w-auto" />
       }
       <button
         type="button"
         (click)="toggleSidebar()"
-        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100"
         [attr.aria-label]="sidebarOpen() ? 'Réduire la navigation' : 'Ouvrir la navigation'"
       >
         <app-icon [name]="sidebarOpen() ? 'chevron-left' : 'menu'" class="h-5 w-5" />
       </button>
     </div>
 
-    <nav class="flex-1 space-y-1 px-2 py-3">
+    <nav class="flex-1 space-y-1 px-3 py-4">
+      @if (sidebarOpen()) {
+        <p class="px-2.5 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Navigation</p>
+      }
       @if (isAdmin()) {
         <a
           routerLink="/admin"
-          routerLinkActive="bg-brand-50 text-brand-700"
+          routerLinkActive="bg-brand-600 text-white shadow-sm hover:bg-brand-600"
           [routerLinkActiveOptions]="{ exact: true }"
           (click)="onNavLinkClick()"
-          class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          class="flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
         >
-          <app-icon name="shield" class="h-5 w-5" />
+          <app-icon name="shield" class="h-5 w-5 shrink-0" />
           @if (sidebarOpen()) {
             <span>Dashboard</span>
           }
         </a>
         <a
           routerLink="/admin/users"
-          routerLinkActive="bg-brand-50 text-brand-700"
+          routerLinkActive="bg-brand-600 text-white shadow-sm hover:bg-brand-600"
           (click)="onNavLinkClick()"
-          class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          class="flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
         >
-          <app-icon name="user" class="h-5 w-5" />
+          <app-icon name="user" class="h-5 w-5 shrink-0" />
           @if (sidebarOpen()) {
             <span>Users</span>
           }
@@ -54,11 +61,11 @@
       }
       <a
         routerLink="/tasks"
-        routerLinkActive="bg-brand-50 text-brand-700"
+        routerLinkActive="bg-brand-600 text-white shadow-sm hover:bg-brand-600"
         (click)="onNavLinkClick()"
-        class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+        class="flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
       >
-        <app-icon name="tasks" class="h-5 w-5" />
+        <app-icon name="tasks" class="h-5 w-5 shrink-0" />
         @if (sidebarOpen()) {
           <span>Tâches</span>
         }
@@ -95,23 +102,29 @@
           class="flex w-full items-center gap-2 rounded-md p-1.5 hover:bg-slate-100"
         >
           <span
-            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700"
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-brand-500 to-brand-700 text-sm font-semibold text-white shadow-sm"
           >
             {{ initials() }}
           </span>
           @if (sidebarOpen()) {
             <span class="min-w-0 flex-1 text-left leading-tight">
               <span class="block truncate text-sm font-medium text-slate-900">{{ user.firstName }} {{ user.lastName }}</span>
-              <span class="block truncate text-xs text-slate-500">{{ roleLabel() }}</span>
+              <span class="mt-0.5 inline-block truncate rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-700">
+                {{ roleLabel() }}
+              </span>
             </span>
-            <app-icon name="chevron-down" class="h-4 w-4 text-slate-400" />
+            <app-icon name="chevron-down" class="h-4 w-4 shrink-0 text-slate-400" />
           }
         </button>
       </div>
     }
   </aside>
 
-  <main #mainEl (scroll)="onMainScroll()" class="flex-1 overflow-y-auto p-6">
+  <main
+    #mainEl
+    (scroll)="onMainScroll()"
+    class="flex-1 overflow-y-auto bg-linear-to-br from-white via-brand-50/50 to-white p-6"
+  >
     @if (!sidebarOpen()) {
       <button
         type="button"
@@ -129,7 +142,7 @@
     type="button"
     (click)="scrollToggle()"
     [attr.aria-label]="atBottom() ? 'Remonter en haut' : 'Descendre en bas'"
-    class="fixed bottom-6 right-6 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md hover:bg-slate-100"
+    class="fixed bottom-6 right-6 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg transition-colors hover:bg-brand-700"
   >
     <app-icon [name]="atBottom() ? 'chevron-up' : 'chevron-down'" class="h-5 w-5" />
   </button>

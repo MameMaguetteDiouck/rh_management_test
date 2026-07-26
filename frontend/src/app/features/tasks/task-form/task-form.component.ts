@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { UsersService } from '../../../core/users/users.service';
 import { User } from '../../../core/models/user.model';
 import { extractErrorMessage } from '../../../core/http/error-message';
+import { ToastService } from '../../../core/notifications/toast.service';
 
 @Component({
   selector: 'app-task-form',
@@ -20,6 +21,7 @@ export class TaskFormComponent implements OnInit {
   private readonly tasksService = inject(TasksService);
   private readonly usersService = inject(UsersService);
   private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly submitting = signal(false);
@@ -78,6 +80,7 @@ export class TaskFormComponent implements OnInit {
           this.tasksService.submit(task.id).subscribe({
             next: (submitted) => {
               this.submitting.set(false);
+              this.notify('Tâche créée et soumise pour validation.');
               this.saved.emit(submitted);
             },
             error: (err: unknown) => this.handleError(err),
@@ -85,10 +88,28 @@ export class TaskFormComponent implements OnInit {
           return;
         }
         this.submitting.set(false);
+        this.notify(this.successMessage(id, creatorId));
         this.saved.emit(task);
       },
       error: (err: unknown) => this.handleError(err),
     });
+  }
+
+  // saved.emit() ci-dessus déclenche souvent une navigation qui détruit ce composant :
+  // on décale l'affichage du toast d'un tick pour ne pas le perdre dans la transition de route.
+  private notify(message: string): void {
+    setTimeout(() => this.toastService.success(message));
+  }
+
+  private successMessage(editedTaskId: string | null, creatorId: string): string {
+    if (editedTaskId) return 'Tâche mise à jour.';
+    if (creatorId) {
+      const collaborator = this.collaborators().find((user) => user.id === creatorId);
+      return collaborator
+        ? `Tâche assignée à ${collaborator.firstName} ${collaborator.lastName}.`
+        : 'Tâche assignée.';
+    }
+    return 'Tâche créée.';
   }
 
   private handleError(err: unknown): void {
