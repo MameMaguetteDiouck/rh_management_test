@@ -10,12 +10,22 @@ function isOwnEditableTask(task: Task, user: User): boolean {
   return task.creatorId === user.id && EDITABLE_STATUSES.includes(task.status);
 }
 
+// le manager qui a lui-même assigné la tâche peut aussi la corriger/l'annuler, en plus du créateur et de l'admin
+function isManagedTask(task: Task, user: User): boolean {
+  if (isOwnEditableTask(task, user)) return true;
+  return (
+    user.role === 'MANAGER' &&
+    task.assignedById === user.id &&
+    EDITABLE_STATUSES.includes(task.status)
+  );
+}
+
 export function canEdit(task: Task, user: User): boolean {
-  return isOwnEditableTask(task, user);
+  return isManagedTask(task, user);
 }
 
 export function canDelete(task: Task, user: User): boolean {
-  return isOwnEditableTask(task, user);
+  return isManagedTask(task, user);
 }
 
 export function canSubmit(task: Task, user: User): boolean {
@@ -25,14 +35,20 @@ export function canSubmit(task: Task, user: User): boolean {
   return isOwnEditableTask(task, user);
 }
 
-function isReviewer(user: User): boolean {
-  return user.role === 'MANAGER' || user.role === 'ADMINISTRATOR';
+// un manager ne valide/rejette que les tâches qu'il a lui-même assignées au collaborateur
+// concerné : ni les tâches auto-créées (non assignées), ni celles assignées par un autre
+// manager ou par l'admin. L'admin, lui, peut tout valider.
+function canReview(task: Task, user: User): boolean {
+  if (task.status !== 'SUBMITTED') return false;
+  if (user.role === 'ADMINISTRATOR') return true;
+  if (user.role === 'MANAGER') return task.assignedById === user.id;
+  return false;
 }
 
 export function canValidate(task: Task, user: User): boolean {
-  return isReviewer(user) && task.status === 'SUBMITTED';
+  return canReview(task, user);
 }
 
 export function canReject(task: Task, user: User): boolean {
-  return isReviewer(user) && task.status === 'SUBMITTED';
+  return canReview(task, user);
 }

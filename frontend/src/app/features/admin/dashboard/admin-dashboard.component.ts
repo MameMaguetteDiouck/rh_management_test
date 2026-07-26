@@ -39,9 +39,13 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    forkJoin({ users: this.usersService.list(), tasks: this.tasksService.list() }).subscribe(({ users, tasks }) => {
-      this.users.set(users);
-      this.tasks.set(tasks);
+    // vue d'ensemble : on veut les décomptes sur l'effectif/pipeline complet, pas juste une page
+    forkJoin({
+      users: this.usersService.list(1, 200),
+      tasks: this.tasksService.list(1, 200),
+    }).subscribe(({ users, tasks }) => {
+      this.users.set(users.items);
+      this.tasks.set(tasks.items);
       this.loading.set(false);
     });
   }

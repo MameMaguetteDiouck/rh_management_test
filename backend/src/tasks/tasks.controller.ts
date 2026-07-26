@@ -6,11 +6,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { RejectTaskDto } from './dto/reject-task.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../../generated/prisma/client';
@@ -27,8 +29,11 @@ export class TasksController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.tasksService.findAll(user);
+  findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query() pagination: PaginationQueryDto,
+  ) {
+    return this.tasksService.findAll(user, pagination);
   }
 
   @Get(':id')

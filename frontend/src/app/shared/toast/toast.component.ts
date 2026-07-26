@@ -41,7 +41,7 @@ const TOAST_STYLES: Record<ToastType, ToastStyle> = {
   imports: [IconComponent],
   template: `
     <div
-      class="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 p-4"
+      class="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-3 px-4"
     >
       @for (toast of toastService.toasts(); track toast.id) {
         <div

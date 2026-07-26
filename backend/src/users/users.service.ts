@@ -1,11 +1,17 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { User } from '../../generated/prisma/client';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import type { PaginatedResult } from '../common/types/paginated-result.interface';
+import { Role, User } from '../../generated/prisma/client';
 
 const SALT_ROUNDS = 10;
 
@@ -34,19 +40,31 @@ export class UsersService {
     return toPublicUser(user);
   }
 
-  async findAll() {
-    const users = await this.prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-    return users.map(toPublicUser);
+  async findAll(
+    pagination: PaginationQueryDto,
+  ): Promise<PaginatedResult<ReturnType<typeof toPublicUser>>> {
+    const { page, pageSize } = pagination;
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.user.count(),
+    ]);
+    return { items: users.map(toPublicUser), total, page, pageSize };
   }
 
   async update(id: string, dto: UpdateUserDto) {
+    if (dto.role && dto.role !== Role.ADMINISTRATOR) {
+      await this.assertLastActiveAdminSurvives(id);
+    }
     const user = await this.prisma.user.update({ where: { id }, data: dto });
     return toPublicUser(user);
   }
 
   async deactivate(id: string) {
+    await this.assertLastActiveAdminSurvives(id);
     const user = await this.prisma.user.update({
       where: { id },
       data: { deactivatedAt: new Date() },
@@ -114,5 +132,21 @@ export class UsersService {
     // Un changement de mot de passe invalide toutes les sessions ouvertes ailleurs.
     await this.prisma.refreshToken.deleteMany({ where: { userId } });
     return toPublicUser(user);
+  }
+
+  // Empêche de se retrouver sans aucun administrateur actif (démotion de rôle ou désactivation)
+  private async assertLastActiveAdminSurvives(userId: string): Promise<void> {
+    const target = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!target || target.role !== Role.ADMINISTRATOR || target.deactivatedAt) {
+      return;
+    }
+    const activeAdminCount = await this.prisma.user.count({
+      where: { role: Role.ADMINISTRATOR, deactivatedAt: null },
+    });
+    if (activeAdminCount <= 1) {
+      throw new ForbiddenException(
+        "Impossible de retirer les droits du dernier administrateur actif.",
+      );
+    }
   }
 }

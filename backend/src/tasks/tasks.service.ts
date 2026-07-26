@@ -7,8 +7,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { RejectTaskDto } from './dto/reject-task.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import type { PaginatedResult } from '../common/types/paginated-result.interface';
 import type { JwtPayload } from '../auth/types/jwt-payload.interface';
-import { Role, TaskStatus } from '../../generated/prisma/client';
+import { Prisma, Role, TaskStatus } from '../../generated/prisma/client';
 
 const EDITABLE_STATUSES: TaskStatus[] = [TaskStatus.DRAFT, TaskStatus.REJECTED];
 
@@ -24,16 +26,16 @@ export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(user: JwtPayload, dto: CreateTaskDto) {
-    const isReviewer = user.role === Role.MANAGER || user.role === Role.ADMINISTRATOR;
+    const assignableRoles = this.getAssignableRoles(user.role);
     let creatorId = user.sub;
     let assignedById: string | null = null;
 
-    if (isReviewer && dto.creatorId) {
+    if (assignableRoles.length > 0 && dto.creatorId) {
       const target = await this.prisma.user.findUnique({
         where: { id: dto.creatorId },
       });
-      if (!target || target.role !== Role.COLLABORATOR) {
-        throw new NotFoundException('Collaborateur introuvable');
+      if (!target || !assignableRoles.includes(target.role)) {
+        throw new NotFoundException('Destinataire introuvable');
       }
       creatorId = target.id;
       assignedById = user.sub;
@@ -50,36 +52,53 @@ export class TasksService {
     });
   }
 
-  findAll(user: JwtPayload) {
-    if (user.role === Role.ADMINISTRATOR) {
-      return this.prisma.task.findMany({
+  // l'admin peut assigner à un manager ou un collaborateur ; un manager, uniquement à un collaborateur
+  private getAssignableRoles(role: Role): Role[] {
+    if (role === Role.ADMINISTRATOR) return [Role.COLLABORATOR, Role.MANAGER];
+    if (role === Role.MANAGER) return [Role.COLLABORATOR];
+    return [];
+  }
+
+  async findAll(
+    user: JwtPayload,
+    pagination: PaginationQueryDto,
+  ): Promise<PaginatedResult<unknown>> {
+    const where = this.buildVisibilityFilter(user);
+    const { page, pageSize } = pagination;
+
+    const [items, total] = await Promise.all([
+      this.prisma.task.findMany({
+        where,
         orderBy: { updatedAt: 'desc' },
         include: TASK_ATTRIBUTION_INCLUDE,
-      });
-    }
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.task.count({ where }),
+    ]);
 
+    return { items, total, page, pageSize };
+  }
+
+  private buildVisibilityFilter(user: JwtPayload): Prisma.TaskWhereInput {
+    if (user.role === Role.ADMINISTRATOR) {
+      return {};
+    }
     if (user.role === Role.MANAGER) {
       // le manager voit tout le pipeline (soumis + rejeté) plus ce qu'il a lui-même
-      // validé ou assigné, même si le statut a changé depuis
-      return this.prisma.task.findMany({
-        where: {
-          OR: [
-            { status: TaskStatus.SUBMITTED },
-            { status: TaskStatus.REJECTED },
-            { validatorId: user.sub },
-            { assignedById: user.sub },
-          ],
-        },
-        orderBy: { updatedAt: 'desc' },
-        include: TASK_ATTRIBUTION_INCLUDE,
-      });
+      // validé ou assigné, même si le statut a changé depuis, ainsi que ses propres tâches
+      // (auto-créées ou assignées par l'admin, l'admin pouvant aussi assigner à un manager)
+      return {
+        OR: [
+          { status: TaskStatus.SUBMITTED },
+          { status: TaskStatus.REJECTED },
+          { validatorId: user.sub },
+          { assignedById: user.sub },
+          { creatorId: user.sub },
+        ],
+      };
     }
-
-    return this.prisma.task.findMany({
-      where: { creatorId: user.sub },
-      orderBy: { updatedAt: 'desc' },
-      include: TASK_ATTRIBUTION_INCLUDE,
-    });
+    return { creatorId: user.sub };
   }
 
   async findOne(id: string, user: JwtPayload) {
@@ -97,7 +116,7 @@ export class TasksService {
   }
 
   async update(id: string, user: JwtPayload, dto: UpdateTaskDto) {
-    const task = await this.getOwnEditableTask(id, user);
+    const task = await this.getManagedTask(id, user);
     return this.prisma.task.update({
       where: { id: task.id },
       data: dto,
@@ -106,7 +125,7 @@ export class TasksService {
   }
 
   async remove(id: string, user: JwtPayload) {
-    const task = await this.getOwnEditableTask(id, user);
+    const task = await this.getManagedTask(id, user);
     await this.prisma.task.delete({ where: { id: task.id } });
   }
 
@@ -132,7 +151,7 @@ export class TasksService {
   }
 
   async validate(id: string, user: JwtPayload) {
-    const task = await this.getSubmittedTask(id);
+    const task = await this.getSubmittedTask(id, user);
     return this.prisma.task.update({
       where: { id: task.id },
       data: { status: TaskStatus.APPROVED, validatorId: user.sub },
@@ -141,7 +160,7 @@ export class TasksService {
   }
 
   async reject(id: string, user: JwtPayload, dto: RejectTaskDto) {
-    const task = await this.getSubmittedTask(id);
+    const task = await this.getSubmittedTask(id, user);
     return this.prisma.task.update({
       where: { id: task.id },
       data: {
@@ -153,6 +172,8 @@ export class TasksService {
     });
   }
 
+  // soumettre reste réservé à la personne qui porte la tâche (créateur) ou à l'admin :
+  // contrairement à update/remove, un manager assignateur ne soumet pas à la place du collaborateur
   private async getOwnEditableTask(id: string, user: JwtPayload) {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) {
@@ -171,7 +192,30 @@ export class TasksService {
     return task;
   }
 
-  private async getSubmittedTask(id: string) {
+  // update/remove : en plus du créateur et de l'admin, le manager qui a lui-même
+  // assigné la tâche peut aussi la corriger ou l'annuler
+  private async getManagedTask(id: string, user: JwtPayload) {
+    const task = await this.prisma.task.findUnique({ where: { id } });
+    if (!task) {
+      throw new NotFoundException('Tâche introuvable');
+    }
+    if (user.role !== Role.ADMINISTRATOR) {
+      const isOwner = task.creatorId === user.sub;
+      const isAssigningManager =
+        user.role === Role.MANAGER && task.assignedById === user.sub;
+      if (!isOwner && !isAssigningManager) {
+        throw new ForbiddenException('Cette tâche ne vous appartient pas');
+      }
+      if (!EDITABLE_STATUSES.includes(task.status)) {
+        throw new ForbiddenException(
+          'Cette tâche ne peut plus être modifiée dans son état actuel',
+        );
+      }
+    }
+    return task;
+  }
+
+  private async getSubmittedTask(id: string, user: JwtPayload) {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) {
       throw new NotFoundException('Tâche introuvable');
@@ -179,6 +223,14 @@ export class TasksService {
     if (task.status !== TaskStatus.SUBMITTED) {
       throw new ForbiddenException(
         "Cette tâche n'est pas en attente de validation",
+      );
+    }
+    // un manager ne valide/rejette que les tâches qu'il a lui-même assignées au collaborateur
+    // concerné : ni les tâches auto-créées (non assignées), ni celles assignées par un autre
+    // manager ou par l'admin. L'admin, lui, peut tout valider.
+    if (user.role === Role.MANAGER && task.assignedById !== user.sub) {
+      throw new ForbiddenException(
+        'Vous ne pouvez valider ou rejeter que les tâches que vous avez vous-même assignées',
       );
     }
     return task;

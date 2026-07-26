@@ -1,16 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CreateUserPayload, UpdateUserPayload, User } from '../models/user.model';
+import { PaginatedResult } from '../models/paginated-result';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/users`;
 
-  list(): Observable<User[]> {
-    return this.http.get<User[]>(this.baseUrl);
+  list(page = 1, pageSize = 50): Observable<PaginatedResult<User>> {
+    const params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    return this.http.get<PaginatedResult<User>>(this.baseUrl, { params });
   }
 
   create(payload: CreateUserPayload): Observable<User> {

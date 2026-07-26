@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
@@ -15,6 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { SkipPasswordCheck } from '../common/decorators/skip-password-check.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -39,8 +41,8 @@ export class UsersController {
   // manager en a besoin pour la liste des collaborateurs à assigner
   @Roles(Role.MANAGER, Role.ADMINISTRATOR)
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() pagination: PaginationQueryDto) {
+    return this.usersService.findAll(pagination);
   }
 
   // attention à l'ordre : avant ':id/password' sinon "me" matche :id

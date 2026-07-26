@@ -1,16 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { CreateTaskPayload, RejectTaskPayload, Task, UpdateTaskPayload } from '../../../core/models/task.model';
+import { PaginatedResult } from '../../../core/models/paginated-result';
 
 @Injectable({ providedIn: 'root' })
 export class TasksService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/tasks`;
 
-  list(): Observable<Task[]> {
-    return this.http.get<Task[]>(this.baseUrl);
+  list(page = 1, pageSize = 50): Observable<PaginatedResult<Task>> {
+    const params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    return this.http.get<PaginatedResult<Task>>(this.baseUrl, { params });
   }
 
   get(id: string): Observable<Task> {

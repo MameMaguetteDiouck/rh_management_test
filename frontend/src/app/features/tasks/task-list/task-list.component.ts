@@ -34,6 +34,11 @@ export class TaskListComponent implements OnInit {
   protected readonly tasks = signal<Task[]>([]);
   protected readonly loading = signal(true);
 
+  protected readonly pageSize = 50;
+  protected readonly page = signal(1);
+  protected readonly total = signal(0);
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
+
   protected readonly statusLabels = TASK_STATUS_LABELS;
   protected readonly statusBadgeClasses = TASK_STATUS_BADGE_CLASSES;
   protected readonly statusAccentClasses = TASK_STATUS_ACCENT_CLASSES;
@@ -82,10 +87,25 @@ export class TaskListComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.tasksService.list().subscribe((tasks) => {
-      this.tasks.set(tasks);
+    this.load(1);
+  }
+
+  private load(page: number): void {
+    this.loading.set(true);
+    this.tasksService.list(page, this.pageSize).subscribe((result) => {
+      this.tasks.set(result.items);
+      this.total.set(result.total);
+      this.page.set(result.page);
       this.loading.set(false);
     });
+  }
+
+  protected nextPage(): void {
+    if (this.page() < this.totalPages()) this.load(this.page() + 1);
+  }
+
+  protected prevPage(): void {
+    if (this.page() > 1) this.load(this.page() - 1);
   }
 
   protected canValidate(task: Task): boolean {
@@ -159,6 +179,7 @@ export class TaskListComponent implements OnInit {
     this.tasksService.remove(task.id).subscribe({
       next: () => {
         this.tasks.update((tasks) => tasks.filter((t) => t.id !== task.id));
+        this.total.update((t) => Math.max(0, t - 1));
         this.closeModal();
         this.toastService.success('Tâche supprimée.');
       },

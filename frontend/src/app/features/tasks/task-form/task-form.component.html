@@ -34,8 +34,10 @@
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
       >
         <option value="">Moi-même</option>
-        @for (collaborator of collaborators(); track collaborator.id) {
-          <option [value]="collaborator.id">{{ collaborator.firstName }} {{ collaborator.lastName }}</option>
+        @for (assignee of assignableUsers(); track assignee.id) {
+          <option [value]="assignee.id">
+            {{ assignee.firstName }} {{ assignee.lastName }} ({{ roleLabels[assignee.role] }})
+          </option>
         }
       </select>
     </div>

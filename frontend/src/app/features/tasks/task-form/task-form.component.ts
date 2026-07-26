@@ -7,6 +7,7 @@ import { UsersService } from '../../../core/users/users.service';
 import { User } from '../../../core/models/user.model';
 import { extractErrorMessage } from '../../../core/http/error-message';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { ROLE_LABELS } from '../../../core/models/role-labels';
 
 @Component({
   selector: 'app-task-form',
@@ -25,7 +26,8 @@ export class TaskFormComponent implements OnInit {
 
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly submitting = signal(false);
-  protected readonly collaborators = signal<User[]>([]);
+  protected readonly assignableUsers = signal<User[]>([]);
+  protected readonly roleLabels = ROLE_LABELS;
 
   // pas de réassignation possible une fois la tâche créée
   protected readonly canAssign = computed(
@@ -40,9 +42,11 @@ export class TaskFormComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.canAssign()) {
+      // l'admin peut assigner à un manager ou un collaborateur ; un manager, uniquement à un collaborateur
+      const assignableRoles = this.authService.isAdmin() ? ['COLLABORATOR', 'MANAGER'] : ['COLLABORATOR'];
       this.usersService
-        .list()
-        .subscribe((users) => this.collaborators.set(users.filter((u) => u.role === 'COLLABORATOR')));
+        .list(1, 200)
+        .subscribe(({ items }) => this.assignableUsers.set(items.filter((u) => assignableRoles.includes(u.role))));
     }
 
     const id = this.taskId();
@@ -104,9 +108,9 @@ export class TaskFormComponent implements OnInit {
   private successMessage(editedTaskId: string | null, creatorId: string): string {
     if (editedTaskId) return 'Tâche mise à jour.';
     if (creatorId) {
-      const collaborator = this.collaborators().find((user) => user.id === creatorId);
-      return collaborator
-        ? `Tâche assignée à ${collaborator.firstName} ${collaborator.lastName}.`
+      const assignee = this.assignableUsers().find((user) => user.id === creatorId);
+      return assignee
+        ? `Tâche assignée à ${assignee.firstName} ${assignee.lastName}.`
         : 'Tâche assignée.';
     }
     return 'Tâche créée.';

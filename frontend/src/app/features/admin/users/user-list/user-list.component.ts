@@ -29,6 +29,11 @@ export class UserListComponent implements OnInit {
 
   protected readonly users = signal<User[]>([]);
   protected readonly loading = signal(true);
+
+  protected readonly pageSize = 50;
+  protected readonly page = signal(1);
+  protected readonly total = signal(0);
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
   protected readonly roleLabels = ROLE_LABELS;
   protected readonly roleKeys: Role[] = ['COLLABORATOR', 'MANAGER', 'ADMINISTRATOR'];
 
@@ -53,15 +58,25 @@ export class UserListComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.load();
+    this.load(1);
   }
 
-  private load(): void {
+  private load(page: number = this.page()): void {
     this.loading.set(true);
-    this.usersService.list().subscribe((users) => {
-      this.users.set(users);
+    this.usersService.list(page, this.pageSize).subscribe((result) => {
+      this.users.set(result.items);
+      this.total.set(result.total);
+      this.page.set(result.page);
       this.loading.set(false);
     });
+  }
+
+  protected nextPage(): void {
+    if (this.page() < this.totalPages()) this.load(this.page() + 1);
+  }
+
+  protected prevPage(): void {
+    if (this.page() > 1) this.load(this.page() - 1);
   }
 
   protected async deactivate(user: User): Promise<void> {
