@@ -1,19 +1,45 @@
 <div class="space-y-4">
-  <div class="flex items-center justify-between">
+  <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-lg font-semibold text-slate-900">Utilisateurs</h1>
     <a
       routerLink="/admin/users/new"
-      class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+      class="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
     >
+      <app-icon name="plus" class="h-4 w-4" />
       Nouvel utilisateur
     </a>
   </div>
 
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="relative min-w-56 flex-1">
+      <app-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <input
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Rechercher un utilisateur…"
+        class="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      />
+    </div>
+    <select
+      [ngModel]="roleFilter()"
+      (ngModelChange)="roleFilter.set($event)"
+      class="rounded-lg border border-slate-300 py-2 px-3 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+    >
+      <option value="ALL">Tous les rôles</option>
+      @for (role of roleKeys; track role) {
+        <option [value]="role">{{ roleLabels[role] }}</option>
+      }
+    </select>
+  </div>
+
   @if (loading()) {
     <p class="text-sm text-slate-500">Chargement…</p>
+  } @else if (filteredUsers().length === 0) {
+    <p class="text-sm text-slate-500">Aucun utilisateur ne correspond à votre recherche.</p>
   } @else {
     <ul class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-      @for (user of users(); track user.id) {
+      @for (user of filteredUsers(); track user.id) {
         <li class="px-4 py-3">
           @if (editingId() === user.id) {
             <app-user-form [initialUser]="user" (saved)="onUserSaved()" (cancelled)="editingId.set(null)" />

@@ -13,6 +13,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Public } from '../common/decorators/public.decorator';
+import { SkipPasswordCheck } from '../common/decorators/skip-password-check.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from './types/jwt-payload.interface';
 import {
@@ -68,6 +69,7 @@ export class AuthController {
     return { success: true };
   }
 
+  @SkipPasswordCheck()
   @Get('me')
   me(@CurrentUser() user: JwtPayload) {
     return this.authService.me(user.sub);

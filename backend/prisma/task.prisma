@@ -19,4 +19,9 @@ model Task {
 
   validatorId String?
   validator   User?  @relation("ValidatedTasks", fields: [validatorId], references: [id])
+
+  // set uniquement quand un manager crée pour un collaborateur (creatorId part chez le collaborateur,
+  // du coup sans ce champ le manager ne retrouve plus les tâches qu'il a lui-même distribuées)
+  assignedById String?
+  assignedBy   User?   @relation("AssignedTasks", fields: [assignedById], references: [id])
 }

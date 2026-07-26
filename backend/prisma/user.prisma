@@ -14,8 +14,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deactivatedAt DateTime?
+  mustChangePassword Boolean @default(true)
 
   createdTasks   Task[] @relation("CreatedTasks")
   validatedTasks Task[] @relation("ValidatedTasks")
+  assignedTasks  Task[] @relation("AssignedTasks")
   refreshTokens  RefreshToken[]
 }

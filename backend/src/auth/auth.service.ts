@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
-import { JwtPayload } from './types/jwt-payload.interface';
+import { SignedJwtPayload } from './types/jwt-payload.interface';
 import { REFRESH_TOKEN_TTL_MS } from './auth.constants';
 
 interface PublicUser {
@@ -13,7 +13,8 @@ interface PublicUser {
   email: string;
   firstName: string;
   lastName: string;
-  role: JwtPayload['role'];
+  role: SignedJwtPayload['role'];
+  mustChangePassword: boolean;
 }
 
 @Injectable()
@@ -69,7 +70,7 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token invalide ou déjà utilisé');
     }
 
-    // Rotation : ce refresh token ne sert plus jamais après cet appel.
+    // rotation, donc on le détruit tout de suite, il ne doit plus resservir
     await this.prisma.refreshToken.delete({ where: { id: stored.id } });
 
     const user = await this.prisma.user.findUniqueOrThrow({
@@ -93,6 +94,7 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 
@@ -106,7 +108,7 @@ export class AuthService {
   }
 
   private async issueTokens(user: PublicUser & { password?: string }) {
-    const payload: JwtPayload = {
+    const payload: SignedJwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
@@ -140,11 +142,13 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        mustChangePassword: user.mustChangePassword,
       },
     };
   }
 
-  // SHA-256, pas bcrypt : secret déjà à haute entropie (pas de brute-force à ralentir), et bcrypt tronque silencieusement au-delà de 72 octets.
+  // pas bcrypt ici : le token est déjà aléatoire à 100%, pas besoin de ralentir le brute-force,
+  // et bcrypt tronque tout ce qui dépasse 72 octets sans le dire
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
   }

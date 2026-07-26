@@ -16,8 +16,26 @@ const EDITABLE_STATUSES: TaskStatus[] = [TaskStatus.DRAFT, TaskStatus.REJECTED];
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(user: JwtPayload, dto: CreateTaskDto) {
-    return this.prisma.task.create({ data: { ...dto, creatorId: user.sub } });
+  async create(user: JwtPayload, dto: CreateTaskDto) {
+    const isReviewer =
+      user.role === Role.MANAGER || user.role === Role.ADMINISTRATOR;
+    let creatorId = user.sub;
+    let assignedById: string | null = null;
+
+    if (isReviewer && dto.creatorId) {
+      const target = await this.prisma.user.findUnique({
+        where: { id: dto.creatorId },
+      });
+      if (!target || target.role !== Role.COLLABORATOR) {
+        throw new NotFoundException('Collaborateur introuvable');
+      }
+      creatorId = target.id;
+      assignedById = user.sub;
+    }
+
+    return this.prisma.task.create({
+      data: { title: dto.title, description: dto.description, creatorId, assignedById },
+    });
   }
 
   findAll(user: JwtPayload) {
@@ -26,9 +44,16 @@ export class TasksService {
     }
 
     if (user.role === Role.MANAGER) {
+      // le manager voit tout le pipeline (soumis + rejeté) plus ce qu'il a lui-même
+      // validé ou assigné, même si le statut a changé depuis
       return this.prisma.task.findMany({
         where: {
-          OR: [{ status: TaskStatus.SUBMITTED }, { validatorId: user.sub }],
+          OR: [
+            { status: TaskStatus.SUBMITTED },
+            { status: TaskStatus.REJECTED },
+            { validatorId: user.sub },
+            { assignedById: user.sub },
+          ],
         },
         orderBy: { updatedAt: 'desc' },
       });
@@ -63,7 +88,7 @@ export class TasksService {
 
   async submit(id: string, user: JwtPayload) {
     const task = await this.getOwnEditableTask(id, user);
-    // On repart d'un historique de validation vierge : une ancienne raison de rejet ne doit pas survivre à la resoumission.
+    // on efface l'ancien rejet, sinon il traînerait après la resoumission
     return this.prisma.task.update({
       where: { id: task.id },
       data: {

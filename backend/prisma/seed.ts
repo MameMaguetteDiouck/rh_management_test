@@ -9,9 +9,13 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   const hash = (plain: string) => bcrypt.hash(plain, 10);
 
+  // le seed tourne à chaque redémarrage du conteneur, donc si une session de test a
+  // désactivé un compte ou coché mustChangePassword à false, ça reviendrait sinon
+  const demoAccountReset = { mustChangePassword: true, deactivatedAt: null };
+
   const admin = await prisma.user.upsert({
     where: { email: 'admin@rh.local' },
-    update: {},
+    update: demoAccountReset,
     create: {
       email: 'admin@rh.local',
       password: await hash('Admin123!'),
@@ -23,7 +27,7 @@ async function main() {
 
   const manager = await prisma.user.upsert({
     where: { email: 'manager@rh.local' },
-    update: {},
+    update: demoAccountReset,
     create: {
       email: 'manager@rh.local',
       password: await hash('Manager123!'),
@@ -35,7 +39,7 @@ async function main() {
 
   const collaborator = await prisma.user.upsert({
     where: { email: 'collab@rh.local' },
-    update: {},
+    update: demoAccountReset,
     create: {
       email: 'collab@rh.local',
       password: await hash('Collab123!'),

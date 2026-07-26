@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { UsersService } from '../data/users.service';
+import { UsersService } from '../../../../core/users/users.service';
 import { Role, User } from '../../../../core/models/user.model';
 import { ROLE_LABELS } from '../../../../core/models/role-labels';
 
@@ -13,7 +13,7 @@ const ROLES: Role[] = ['COLLABORATOR', 'MANAGER', 'ADMINISTRATOR'];
   templateUrl: './user-form.component.html',
 })
 export class UserFormComponent implements OnInit {
-  // Objet déjà en mémoire (venant de la liste) plutôt qu'un id à recharger — pas de GET /users/:id côté backend.
+  // reçoit l'objet direct (déjà dispo dans la liste), y a pas de GET /users/:id côté backend de toute façon
   readonly initialUser = input<User | null>(null);
   readonly saved = output<User>();
   readonly cancelled = output<void>();

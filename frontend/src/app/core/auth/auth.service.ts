@@ -65,7 +65,9 @@ export class AuthService {
     this.currentUserSignal.set(null);
   }
 
-  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<void> {
-    return this.http.patch<void>(`${environment.apiUrl}/users/me/password`, payload);
+  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<User> {
+    return this.http
+      .patch<User>(`${environment.apiUrl}/users/me/password`, payload)
+      .pipe(tap((user) => this.currentUserSignal.set(user)));
   }
 }

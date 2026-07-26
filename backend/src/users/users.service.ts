@@ -19,6 +19,7 @@ function toPublicUser(user: User) {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     deactivatedAt: user.deactivatedAt,
+    mustChangePassword: user.mustChangePassword,
   };
 }
 
@@ -50,7 +51,7 @@ export class UsersService {
       where: { id },
       data: { deactivatedAt: new Date() },
     });
-    // On coupe aussi les sessions déjà ouvertes : la désactivation doit être immédiate.
+    // sinon un token déjà émis reste valide après désactivation
     await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
     return toPublicUser(user);
   }
@@ -71,19 +72,28 @@ export class UsersService {
     if (!matches) {
       throw new UnauthorizedException('Mot de passe actuel incorrect');
     }
-    await this.setPassword(userId, dto.newPassword);
+    return this.setPassword(userId, dto.newPassword, false);
   }
 
   async resetPassword(id: string, dto: ResetPasswordDto) {
-    await this.setPassword(id, dto.newPassword);
+    // pas "choisi" par l'utilisateur, donc on le refait rechanger comme à la création
+    return this.setPassword(id, dto.newPassword, true);
   }
 
-  private async setPassword(userId: string, newPassword: string) {
-    await this.prisma.user.update({
+  private async setPassword(
+    userId: string,
+    newPassword: string,
+    mustChangePassword: boolean,
+  ) {
+    const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { password: await bcrypt.hash(newPassword, SALT_ROUNDS) },
+      data: {
+        password: await bcrypt.hash(newPassword, SALT_ROUNDS),
+        mustChangePassword,
+      },
     });
     // Un changement de mot de passe invalide toutes les sessions ouvertes ailleurs.
     await this.prisma.refreshToken.deleteMany({ where: { userId } });
+    return toPublicUser(user);
   }
 }

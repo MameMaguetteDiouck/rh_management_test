@@ -1,4 +1,4 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength, IsUUID } from 'class-validator';
 
 export class CreateTaskDto {
   @IsString()
@@ -8,4 +8,9 @@ export class CreateTaskDto {
   @IsString()
   @MinLength(1)
   description: string;
+
+  // ignoré si envoyé par un collaborateur, seuls manager/admin peuvent l'utiliser
+  @IsOptional()
+  @IsUUID()
+  creatorId?: string;
 }

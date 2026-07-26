@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { UsersService } from '../users/data/users.service';
+import { UsersService } from '../../../core/users/users.service';
 import { TasksService } from '../../tasks/data/tasks.service';
 import { User } from '../../../core/models/user.model';
 import { Task, TaskStatus } from '../../../core/models/task.model';

@@ -28,15 +28,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<JwtPayload> {
-    // Revérifié à chaque requête (pas seulement au login) : un compte désactivé doit perdre l'accès immédiatement, sans attendre l'expiration du token.
+  async validate(
+    payload: Omit<JwtPayload, 'mustChangePassword'>,
+  ): Promise<JwtPayload> {
+    // requête en base à chaque appel, pas juste au login, sinon désactiver un compte
+    // ne prend effet qu'à l'expiration du token
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { deactivatedAt: true },
+      select: { deactivatedAt: true, mustChangePassword: true },
     });
     if (!user || user.deactivatedAt) {
       throw new UnauthorizedException('Compte désactivé');
     }
-    return payload;
+    return { ...payload, mustChangePassword: user.mustChangePassword };
   }
 }

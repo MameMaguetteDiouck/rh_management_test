@@ -1,149 +1,252 @@
-<div class="space-y-4">
-  <div class="flex items-center justify-between">
+<div class="space-y-5">
+  <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-lg font-semibold text-slate-900">{{ title() }}</h1>
     <a
       routerLink="/tasks/new"
-      class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+      class="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
     >
+      <app-icon name="plus" class="h-4 w-4" />
       Nouvelle tâche
     </a>
+  </div>
+
+  @if (isManager() && !loading()) {
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      @for (status of statusKeys; track status) {
+        <div class="rounded-lg border border-slate-200 bg-white p-3 text-center">
+          <p class="text-2xl font-semibold text-slate-900">{{ statusCounts()[status] }}</p>
+          <p class="text-xs text-slate-500">{{ statusLabels[status] }}</p>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="relative min-w-56 flex-1">
+      <app-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <input
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Rechercher une tâche…"
+        class="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      />
+    </div>
+    <select
+      [ngModel]="statusFilter()"
+      (ngModelChange)="statusFilter.set($event)"
+      class="rounded-lg border border-slate-300 py-2 px-3 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+    >
+      <option value="ALL">Tous les statuts</option>
+      @for (status of statusKeys; track status) {
+        <option [value]="status">{{ statusLabels[status] }}</option>
+      }
+    </select>
   </div>
 
   @if (loading()) {
     <p class="text-sm text-slate-500">Chargement…</p>
   } @else if (tasks().length === 0) {
     <p class="text-sm text-slate-500">Aucune tâche pour le moment.</p>
+  } @else if (filteredTasks().length === 0) {
+    <p class="text-sm text-slate-500">Aucune tâche ne correspond à votre recherche.</p>
   } @else {
-    <ul class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-      @for (task of tasks(); track task.id) {
-        <li class="px-4 py-3">
-          @if (editingId() === task.id) {
-            <app-task-form [taskId]="task.id" (saved)="onEdited($event)" />
-            <button
-              type="button"
-              (click)="editingId.set(null)"
-              class="mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (task of filteredTasks(); track task.id) {
+        <button
+          type="button"
+          (click)="openModal(task)"
+          class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <p class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">{{ task.title }}</p>
+            <span
+              class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
+              [class]="statusBadgeClasses[task.status]"
             >
-              Annuler
-            </button>
-          } @else {
-            <div class="flex items-center justify-between gap-4">
-              <button type="button" (click)="toggleExpand(task)" class="min-w-0 flex-1 text-left">
-                <p class="truncate text-sm font-medium text-slate-900">{{ task.title }}</p>
-                <p class="truncate text-sm text-slate-500">{{ task.description }}</p>
-              </button>
+              {{ statusLabels[task.status] }}
+            </span>
+          </div>
 
-              <div class="flex shrink-0 items-center gap-2">
-                <span class="rounded-full px-2.5 py-1 text-xs font-medium" [class]="statusBadgeClasses[task.status]">
-                  {{ statusLabels[task.status] }}
-                </span>
+          <p class="line-clamp-3 text-sm text-slate-500">{{ task.description }}</p>
 
+          @if (task.rejectionReason && task.status === 'REJECTED') {
+            <p class="line-clamp-1 text-xs text-red-600">Motif : {{ task.rejectionReason }}</p>
+          }
+
+          <div class="mt-auto flex items-center justify-between pt-1">
+            <p class="text-xs text-slate-400">{{ task.updatedAt | date: 'dd/MM/yyyy' }}</p>
+
+            @if (canSubmit(task) || canValidate(task) || canReject(task)) {
+              <div class="flex items-center gap-2" (click)="$event.stopPropagation()">
                 @if (canSubmit(task)) {
                   <button
                     type="button"
                     (click)="submitTask(task)"
-                    class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+                    class="rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700"
                   >
                     Soumettre
-                  </button>
-                }
-                @if (canEdit(task)) {
-                  <button
-                    type="button"
-                    (click)="editingId.set(task.id)"
-                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                  >
-                    Modifier
-                  </button>
-                }
-                @if (canDelete(task)) {
-                  <button
-                    type="button"
-                    (click)="deleteTask(task)"
-                    class="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
-                  >
-                    Supprimer
                   </button>
                 }
                 @if (canValidate(task)) {
                   <button
                     type="button"
                     (click)="validateTask(task)"
-                    class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+                    class="rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700"
                   >
                     Valider
                   </button>
                 }
-                @if (canReject(task) && rejectingId() !== task.id) {
+                @if (canReject(task)) {
                   <button
                     type="button"
-                    (click)="rejectingId.set(task.id)"
-                    class="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                    (click)="openRejectModal(task)"
+                    class="rounded-lg border border-red-300 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
                   >
                     Rejeter
                   </button>
                 }
-
-                <button
-                  type="button"
-                  (click)="toggleExpand(task)"
-                  class="rounded-lg px-2 py-1.5 text-sm text-slate-400 hover:bg-slate-100"
-                  [attr.aria-label]="expandedId() === task.id ? 'Réduire' : 'Voir les détails'"
-                >
-                  {{ expandedId() === task.id ? '▲' : '▼' }}
-                </button>
-              </div>
-            </div>
-
-            @if (expandedId() === task.id) {
-              <div class="mt-3 space-y-2 rounded-lg bg-slate-50 p-3 text-sm">
-                <p class="whitespace-pre-wrap text-slate-700">{{ task.description }}</p>
-                @if (task.rejectionReason) {
-                  <div class="rounded-lg bg-red-50 p-2 text-red-700">
-                    <p class="font-medium">Motif du rejet</p>
-                    <p>{{ task.rejectionReason }}</p>
-                  </div>
-                }
-                <p class="text-xs text-slate-400">
-                  Créée le {{ task.createdAt | date: 'dd/MM/yyyy HH:mm' }} · Dernière modification le
-                  {{ task.updatedAt | date: 'dd/MM/yyyy HH:mm' }}
-                </p>
               </div>
             }
-
-            @if (rejectingId() === task.id) {
-              <div class="mt-3 flex items-end gap-2 rounded-lg border border-slate-200 p-3">
-                <div class="flex-1 space-y-1">
-                  <label [for]="'reason-' + task.id" class="block text-sm font-medium text-slate-700">
-                    Motif du rejet
-                  </label>
-                  <input
-                    [id]="'reason-' + task.id"
-                    type="text"
-                    [ngModel]="rejectionReason()"
-                    (ngModelChange)="rejectionReason.set($event)"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  />
-                </div>
-                <button
-                  type="button"
-                  (click)="confirmReject(task)"
-                  class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
-                >
-                  Confirmer
-                </button>
-                <button
-                  type="button"
-                  (click)="rejectingId.set(null)"
-                  class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                >
-                  Annuler
-                </button>
-              </div>
-            }
-          }
-        </li>
+          </div>
+        </button>
       }
-    </ul>
+    </div>
   }
 </div>
+
+@if (selectedTask(); as task) {
+  <div
+    class="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4"
+    (click)="closeModal()"
+  >
+    <div
+      class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl"
+      (click)="$event.stopPropagation()"
+    >
+      @if (modalEditing()) {
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-semibold text-slate-900">Modifier la tâche</h2>
+          <button type="button" (click)="closeModal()" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
+            <app-icon name="x" class="h-5 w-5" />
+          </button>
+        </div>
+        <app-task-form class="mt-4 block" [taskId]="task.id" (saved)="onEdited($event)" />
+        <button
+          type="button"
+          (click)="modalEditing.set(false)"
+          class="mt-3 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+        >
+          Annuler
+        </button>
+      } @else {
+        <div class="flex items-start justify-between gap-3">
+          <h2 class="min-w-0 flex-1 text-base font-semibold text-slate-900">{{ task.title }}</h2>
+          <button type="button" (click)="closeModal()" class="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
+            <app-icon name="x" class="h-5 w-5" />
+          </button>
+        </div>
+
+        <span
+          class="mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium"
+          [class]="statusBadgeClasses[task.status]"
+        >
+          {{ statusLabels[task.status] }}
+        </span>
+
+        <p class="mt-4 whitespace-pre-wrap text-sm text-slate-700">{{ task.description }}</p>
+
+        @if (task.rejectionReason) {
+          <div class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <p class="font-medium">Motif du rejet</p>
+            <p>{{ task.rejectionReason }}</p>
+          </div>
+        }
+
+        <p class="mt-4 text-xs text-slate-400">
+          Créée le {{ task.createdAt | date: 'dd/MM/yyyy HH:mm' }} · Dernière modification le
+          {{ task.updatedAt | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+
+        @if (showRejectForm()) {
+          <div class="mt-4 space-y-2 rounded-lg border border-slate-200 p-3">
+            <label for="modal-reject-reason" class="block text-sm font-medium text-slate-700">Motif du rejet</label>
+            <input
+              id="modal-reject-reason"
+              type="text"
+              [ngModel]="rejectionReason()"
+              (ngModelChange)="rejectionReason.set($event)"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="confirmReject()"
+                class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Confirmer le rejet
+              </button>
+              <button
+                type="button"
+                (click)="showRejectForm.set(false)"
+                class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        }
+
+        <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+          @if (canSubmit(task)) {
+            <button
+              type="button"
+              (click)="submitTask(task)"
+              class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              Soumettre
+            </button>
+          }
+          @if (canValidate(task)) {
+            <button
+              type="button"
+              (click)="validateTask(task)"
+              class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              Valider
+            </button>
+          }
+          @if (canReject(task) && !showRejectForm()) {
+            <button
+              type="button"
+              (click)="showRejectForm.set(true)"
+              class="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Rejeter
+            </button>
+          }
+          @if (canEdit(task)) {
+            <button
+              type="button"
+              (click)="modalEditing.set(true)"
+              class="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              <app-icon name="pencil" class="h-4 w-4" />
+              Modifier
+            </button>
+          }
+          @if (canDelete(task)) {
+            <button
+              type="button"
+              (click)="deleteTask(task)"
+              class="flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              <app-icon name="trash" class="h-4 w-4" />
+              Supprimer
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

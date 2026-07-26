@@ -1,6 +1,12 @@
 <div class="max-w-sm space-y-6">
   <h1 class="text-lg font-semibold text-slate-900">Profil</h1>
 
+  @if (mustChangePassword()) {
+    <div class="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+      Vous devez choisir un nouveau mot de passe avant de continuer.
+    </div>
+  }
+
   @if (currentUser(); as user) {
     <div class="space-y-3 rounded-xl bg-white p-6 shadow-sm">
       <div>
@@ -41,6 +47,19 @@
         />
         @if (form.controls.newPassword.invalid && form.controls.newPassword.touched) {
           <p class="text-sm text-red-600">6 caractères minimum.</p>
+        }
+      </div>
+
+      <div class="space-y-1">
+        <label for="confirmPassword" class="block text-sm font-medium text-slate-700">Confirmer le mot de passe</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          formControlName="confirmPassword"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+        @if (form.errors?.['passwordsMismatch'] && form.controls.confirmPassword.touched) {
+          <p class="text-sm text-red-600">Les mots de passe ne correspondent pas.</p>
         }
       </div>
 

@@ -9,6 +9,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   deactivatedAt: string | null;
+  mustChangePassword: boolean;
 }
 
 export interface CreateUserPayload {

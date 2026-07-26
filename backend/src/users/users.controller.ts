@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import { SkipPasswordCheck } from '../common/decorators/skip-password-check.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '../../generated/prisma/client';
 import type { JwtPayload } from '../auth/types/jwt-payload.interface';
@@ -19,13 +20,15 @@ export class UsersController {
     return this.usersService.create(dto);
   }
 
-  @Roles(Role.ADMINISTRATOR)
+  // manager en a besoin pour la liste des collaborateurs à assigner
+  @Roles(Role.MANAGER, Role.ADMINISTRATOR)
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
-  // Doit être déclaré avant ':id/password' pour ne pas être capté par le paramètre :id.
+  // attention à l'ordre : avant ':id/password' sinon "me" matche :id
+  @SkipPasswordCheck()
   @Patch('me/password')
   changeOwnPassword(
     @CurrentUser() user: JwtPayload,

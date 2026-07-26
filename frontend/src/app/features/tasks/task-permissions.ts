@@ -1,8 +1,8 @@
 import { Task, TaskStatus } from '../../core/models/task.model';
 import { User } from '../../core/models/user.model';
 
-// Miroir de TasksService (backend, src/tasks/tasks.service.ts) — l'UI se contente de refléter
-// ce que le serveur autorise déjà ; le backend reste la seule autorité réelle.
+// Copie les règles de backend/tasks.service.ts. C'est juste pour l'affichage des boutons,
+// le backend revalide tout de toute façon.
 const EDITABLE_STATUSES: TaskStatus[] = ['DRAFT', 'REJECTED'];
 
 function isOwnEditableTask(task: Task, user: User): boolean {

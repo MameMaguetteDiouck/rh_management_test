@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { MustChangePasswordGuard } from './common/guards/must-change-password.guard';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 @Module({
@@ -24,6 +25,7 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter'
     AppService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: MustChangePasswordGuard },
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },
   ],
 })
