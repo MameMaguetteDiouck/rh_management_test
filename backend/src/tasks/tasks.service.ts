@@ -17,8 +17,7 @@ export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(user: JwtPayload, dto: CreateTaskDto) {
-    const isReviewer =
-      user.role === Role.MANAGER || user.role === Role.ADMINISTRATOR;
+    const isReviewer = user.role === Role.MANAGER;
     let creatorId = user.sub;
     let assignedById: string | null = null;
 
@@ -34,7 +33,12 @@ export class TasksService {
     }
 
     return this.prisma.task.create({
-      data: { title: dto.title, description: dto.description, creatorId, assignedById },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        creatorId,
+        assignedById,
+      },
     });
   }
 

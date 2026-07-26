@@ -20,6 +20,7 @@ export class AuthService {
   readonly isAuthenticated = computed(() => this.currentUserSignal() !== null);
   readonly isAdmin = computed(() => this.currentUserSignal()?.role === 'ADMINISTRATOR');
   readonly isManager = computed(() => this.currentUserSignal()?.role === 'MANAGER');
+  readonly isCollab = computed(()=> this.currentUserSignal()?.role == 'COLLABORATOR')
 
   login(credentials: LoginCredentials): Observable<User> {
     return this.http.post<{ user: User }>(`${this.baseUrl}/login`, credentials).pipe(

@@ -20,6 +20,7 @@ import type { JwtPayload } from '../auth/types/jwt-payload.interface';
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  @Roles(Role.COLLABORATOR, Role.MANAGER)
   @Post()
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateTaskDto) {
     return this.tasksService.create(user, dto);
@@ -54,13 +55,13 @@ export class TasksController {
     return this.tasksService.submit(id, user);
   }
 
-  @Roles(Role.MANAGER, Role.ADMINISTRATOR)
+  @Roles(Role.MANAGER)
   @Post(':id/validate')
   validate(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.tasksService.validate(id, user);
   }
 
-  @Roles(Role.MANAGER, Role.ADMINISTRATOR)
+  @Roles(Role.MANAGER)
   @Post(':id/reject')
   reject(
     @Param('id') id: string,

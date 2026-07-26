@@ -19,6 +19,29 @@
     </div>
 
     <nav class="flex-1 space-y-1 px-2 py-3">
+      @if (isAdmin()) {
+        <a
+          routerLink="/admin"
+          routerLinkActive="bg-brand-50 text-brand-700"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+        >
+          <app-icon name="shield" class="h-5 w-5" />
+          @if (sidebarOpen()) {
+            <span>Dashboard</span>
+          }
+        </a>
+        <a
+          routerLink="/admin/users"
+          routerLinkActive="bg-brand-50 text-brand-700"
+          class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+        >
+          <app-icon name="user" class="h-5 w-5" />
+          @if (sidebarOpen()) {
+            <span>Users</span>
+          }
+        </a>
+      }
       <a
         routerLink="/tasks"
         routerLinkActive="bg-brand-50 text-brand-700"
@@ -29,18 +52,6 @@
           <span>Tâches</span>
         }
       </a>
-      @if (isAdmin()) {
-        <a
-          routerLink="/admin"
-          routerLinkActive="bg-brand-50 text-brand-700"
-          class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-        >
-          <app-icon name="shield" class="h-5 w-5" />
-          @if (sidebarOpen()) {
-            <span>Administration</span>
-          }
-        </a>
-      }
     </nav>
 
     @if (currentUser(); as user) {

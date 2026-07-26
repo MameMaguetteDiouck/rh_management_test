@@ -43,6 +43,7 @@ export class TaskListComponent implements OnInit {
   });
 
   protected readonly isManager = this.authService.isManager;
+  protected readonly isCollab = this.authService.isCollab;
   protected readonly statusKeys = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'] as const;
 
   // calculés depuis la liste déjà chargée, pas besoin d'un endpoint dédié

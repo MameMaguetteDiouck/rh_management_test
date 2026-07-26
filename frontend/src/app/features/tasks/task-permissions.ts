@@ -22,7 +22,7 @@ export function canSubmit(task: Task, user: User): boolean {
 }
 
 function isReviewer(user: User): boolean {
-  return user.role === 'MANAGER' || user.role === 'ADMINISTRATOR';
+  return user.role === 'MANAGER';
 }
 
 export function canValidate(task: Task, user: User): boolean {

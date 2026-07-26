@@ -1,7 +1,7 @@
 <div class="space-y-5">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-lg font-semibold text-slate-900">{{ title() }}</h1>
-    <a
+    <a *ngIf="isManager() || isCollab()"
       routerLink="/tasks/new"
       class="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
     >
