@@ -1,12 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PasswordInputComponent } from '../../../shared/password-input/password-input.component';
+import { IconComponent } from '../../../shared/icon/icon.component';
+import { extractErrorMessage } from '../../../core/http/error-message';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PasswordInputComponent, IconComponent],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
@@ -35,11 +37,7 @@ export class LoginComponent {
       next: () => this.router.navigateByUrl('/'),
       error: (err: unknown) => {
         this.submitting.set(false);
-        const message =
-          err instanceof HttpErrorResponse
-            ? (err.error?.message ?? 'Une erreur est survenue.')
-            : 'Une erreur est survenue.';
-        this.errorMessage.set(message);
+        this.errorMessage.set(extractErrorMessage(err));
       },
     });
   }

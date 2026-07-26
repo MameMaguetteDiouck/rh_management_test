@@ -92,12 +92,11 @@
                   <label [for]="'newPassword-' + user.id" class="block text-sm font-medium text-slate-700">
                     Nouveau mot de passe
                   </label>
-                  <input
+                  <app-password-input
                     [id]="'newPassword-' + user.id"
-                    type="password"
                     [ngModel]="newPassword()"
                     (ngModelChange)="newPassword.set($event)"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    autocomplete="new-password"
                   />
                 </div>
                 <button

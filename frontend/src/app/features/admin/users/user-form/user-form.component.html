@@ -33,12 +33,7 @@
   @if (!isEdit()) {
     <div class="space-y-1">
       <label for="password" class="block text-sm font-medium text-slate-700">Mot de passe initial</label>
-      <input
-        id="password"
-        type="password"
-        formControlName="password"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-      />
+      <app-password-input id="password" formControlName="password" autocomplete="new-password" />
     </div>
   }
 

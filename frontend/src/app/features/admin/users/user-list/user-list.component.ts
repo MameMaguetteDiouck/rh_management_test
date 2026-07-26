@@ -6,12 +6,13 @@ import { Role, User } from '../../../../core/models/user.model';
 import { ROLE_LABELS } from '../../../../core/models/role-labels';
 import { UserFormComponent } from '../user-form/user-form.component';
 import { IconComponent } from '../../../../shared/icon/icon.component';
+import { PasswordInputComponent } from '../../../../shared/password-input/password-input.component';
 
 type RoleFilter = Role | 'ALL';
 
 @Component({
   selector: 'app-user-list',
-  imports: [RouterLink, FormsModule, UserFormComponent, IconComponent],
+  imports: [RouterLink, FormsModule, UserFormComponent, IconComponent, PasswordInputComponent],
   templateUrl: './user-list.component.html',
 })
 export class UserListComponent implements OnInit {

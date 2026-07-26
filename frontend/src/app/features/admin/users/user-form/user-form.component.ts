@@ -1,15 +1,16 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UsersService } from '../../../../core/users/users.service';
 import { Role, User } from '../../../../core/models/user.model';
 import { ROLE_LABELS } from '../../../../core/models/role-labels';
+import { PasswordInputComponent } from '../../../../shared/password-input/password-input.component';
+import { extractErrorMessage } from '../../../../core/http/error-message';
 
 const ROLES: Role[] = ['COLLABORATOR', 'MANAGER', 'ADMINISTRATOR'];
 
 @Component({
   selector: 'app-user-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PasswordInputComponent],
   templateUrl: './user-form.component.html',
 })
 export class UserFormComponent implements OnInit {
@@ -69,9 +70,7 @@ export class UserFormComponent implements OnInit {
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        const message =
-          err instanceof HttpErrorResponse ? (err.error?.message ?? 'Une erreur est survenue.') : 'Une erreur est survenue.';
-        this.errorMessage.set(message);
+        this.errorMessage.set(extractErrorMessage(err));
       },
     });
   }

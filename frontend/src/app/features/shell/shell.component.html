@@ -1,8 +1,16 @@
 <div class="flex h-screen bg-slate-50">
+  @if (sidebarOpen()) {
+    <div
+      (click)="closeSidebar()"
+      class="fixed inset-0 z-20 bg-slate-900/40 md:hidden"
+    ></div>
+  }
+
   <aside
-    class="flex flex-col border-r border-slate-200 bg-white transition-[width] duration-200"
-    [class.w-64]="sidebarOpen()"
-    [class.w-16]="!sidebarOpen()"
+    class="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:transition-[width]"
+    [class.translate-x-0]="sidebarOpen()"
+    [class.-translate-x-full]="!sidebarOpen()"
+    [class.md:w-16]="!sidebarOpen()"
   >
     <div class="flex h-14 items-center justify-between border-b border-slate-100 px-3">
       @if (sidebarOpen()) {
@@ -24,6 +32,7 @@
           routerLink="/admin"
           routerLinkActive="bg-brand-50 text-brand-700"
           [routerLinkActiveOptions]="{ exact: true }"
+          (click)="onNavLinkClick()"
           class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
         >
           <app-icon name="shield" class="h-5 w-5" />
@@ -34,6 +43,7 @@
         <a
           routerLink="/admin/users"
           routerLinkActive="bg-brand-50 text-brand-700"
+          (click)="onNavLinkClick()"
           class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
         >
           <app-icon name="user" class="h-5 w-5" />
@@ -45,6 +55,7 @@
       <a
         routerLink="/tasks"
         routerLinkActive="bg-brand-50 text-brand-700"
+        (click)="onNavLinkClick()"
         class="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
       >
         <app-icon name="tasks" class="h-5 w-5" />
@@ -100,7 +111,26 @@
     }
   </aside>
 
-  <main class="flex-1 overflow-y-auto p-6">
+  <main #mainEl (scroll)="onMainScroll()" class="flex-1 overflow-y-auto p-6">
+    @if (!sidebarOpen()) {
+      <button
+        type="button"
+        (click)="toggleSidebar()"
+        aria-label="Ouvrir la navigation"
+        class="mb-4 flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-100 md:hidden"
+      >
+        <app-icon name="menu" class="h-5 w-5" />
+      </button>
+    }
     <router-outlet />
   </main>
+
+  <button
+    type="button"
+    (click)="scrollToggle()"
+    [attr.aria-label]="atBottom() ? 'Remonter en haut' : 'Descendre en bas'"
+    class="fixed bottom-6 right-6 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md hover:bg-slate-100"
+  >
+    <app-icon [name]="atBottom() ? 'chevron-up' : 'chevron-down'" class="h-5 w-5" />
+  </button>
 </div>

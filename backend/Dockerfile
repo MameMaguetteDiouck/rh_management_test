@@ -16,4 +16,4 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"]
+CMD ["sh", "-c", "i=0; until npx prisma migrate deploy; do i=$((i+1)); if [ $i -ge 10 ]; then echo 'Base de donnees inaccessible apres 10 tentatives, abandon.'; exit 1; fi; echo 'Base de donnees pas encore prete, nouvelle tentative dans 3s...'; sleep 3; done && npx prisma db seed && npm run start:prod"]

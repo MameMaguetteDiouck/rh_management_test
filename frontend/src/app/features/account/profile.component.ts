@@ -1,9 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLE_LABELS } from '../../core/models/role-labels';
+import { PasswordInputComponent } from '../../shared/password-input/password-input.component';
+import { extractErrorMessage } from '../../core/http/error-message';
 
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
   const newPassword = control.get('newPassword')?.value;
@@ -13,7 +14,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
 
 @Component({
   selector: 'app-profile',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PasswordInputComponent],
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent {
@@ -64,9 +65,7 @@ export class ProfileComponent {
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        const message =
-          err instanceof HttpErrorResponse ? (err.error?.message ?? 'Une erreur est survenue.') : 'Une erreur est survenue.';
-        this.errorMessage.set(message);
+        this.errorMessage.set(extractErrorMessage(err));
       },
     });
   }

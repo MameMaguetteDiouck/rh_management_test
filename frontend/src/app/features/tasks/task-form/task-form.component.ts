@@ -1,11 +1,11 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TasksService } from '../data/tasks.service';
 import { Task } from '../../../core/models/task.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UsersService } from '../../../core/users/users.service';
 import { User } from '../../../core/models/user.model';
+import { extractErrorMessage } from '../../../core/http/error-message';
 
 @Component({
   selector: 'app-task-form',
@@ -93,8 +93,6 @@ export class TaskFormComponent implements OnInit {
 
   private handleError(err: unknown): void {
     this.submitting.set(false);
-    const message =
-      err instanceof HttpErrorResponse ? (err.error?.message ?? 'Une erreur est survenue.') : 'Une erreur est survenue.';
-    this.errorMessage.set(message);
+    this.errorMessage.set(extractErrorMessage(err));
   }
 }

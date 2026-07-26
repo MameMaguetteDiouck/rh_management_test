@@ -4,6 +4,7 @@ export type IconName =
   | 'menu'
   | 'chevron-left'
   | 'chevron-down'
+  | 'chevron-up'
   | 'search'
   | 'plus'
   | 'pencil'
@@ -12,7 +13,11 @@ export type IconName =
   | 'logout'
   | 'tasks'
   | 'shield'
-  | 'user';
+  | 'user'
+  | 'eye'
+  | 'eye-off'
+  | 'mail'
+  | 'lock';
 
 @Component({
   selector: 'app-icon',
@@ -36,6 +41,9 @@ export type IconName =
         }
         @case ('chevron-down') {
           <path d="M6 9l6 6 6-6" />
+        }
+        @case ('chevron-up') {
+          <path d="M18 15l-6-6-6 6" />
         }
         @case ('search') {
           <circle cx="11" cy="11" r="7" />
@@ -72,6 +80,23 @@ export type IconName =
         @case ('user') {
           <circle cx="12" cy="8" r="4" />
           <path d="M4 20c0-4 3.5-6 8-6s8 2 8 6" />
+        }
+        @case ('eye') {
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        }
+        @case ('eye-off') {
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+          <path d="M3 3l18 18" />
+        }
+        @case ('mail') {
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 7l9 6 9-6" />
+        }
+        @case ('lock') {
+          <rect x="4" y="10" width="16" height="10" rx="2" />
+          <path d="M7 10V7a5 5 0 0 1 10 0v3" />
         }
       }
     </svg>

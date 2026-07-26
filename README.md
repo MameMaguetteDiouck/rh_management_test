@@ -73,13 +73,15 @@ npm run start:dev
 
 Créés automatiquement par le seed (`backend/prisma/seed.ts`) au premier `migrate deploy`/`migrate reset` :
 
-| Rôle | Email | Mot de passe |
-|---|---|---|
-| Administrateur | `admin@rh.local` | `Admin123!` |
-| Manager | `manager@rh.local` | `Manager123!` |
-| Collaborateur | `collab@rh.local` | `Collab123!` |
+| Rôle           | Email              | Mot de passe   |
+|----------------|--------------------|----------------|
+| Administrateur | `admin@rh.local`   | `Admin123!`    |
+| Manager        | `manager@rh.local` | `Manager123!`  |
+| Collaborateur  | `collab@rh.local`  | `Collab123!`   |
 
 Deux tâches de démonstration (une `DRAFT`, une `SUBMITTED`) sont aussi créées pour le compte collaborateur.
+
+> À la première connexion, chaque compte est obligé de changer son mot de passe (redirection automatique vers la page Profil, reste de l'application bloquée jusque là) — c'est le comportement attendu, pas un bug.
 
 ## Aperçu de l'API
 
