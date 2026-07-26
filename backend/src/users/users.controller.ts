@@ -57,7 +57,8 @@ export class UsersController {
     // changer son propre mot de passe invalide aussi le refresh token de la session en
     // cours (setPassword les supprime tous) : on en réémet un tout de suite pour éviter
     // que l'utilisateur soit déconnecté juste après avoir changé son mot de passe.
-    const { accessToken, refreshToken } = await this.authService.issueTokens(updated);
+    const { accessToken, refreshToken } =
+      await this.authService.issueTokens(updated);
     setAuthCookies(res, accessToken, refreshToken);
     return updated;
   }
@@ -90,7 +91,9 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     if (id === user.sub) {
-      throw new ForbiddenException('Vous ne pouvez pas supprimer votre propre compte.');
+      throw new ForbiddenException(
+        'Vous ne pouvez pas supprimer votre propre compte.',
+      );
     }
     return this.usersService.remove(id);
   }

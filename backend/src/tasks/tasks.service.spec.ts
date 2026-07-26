@@ -59,7 +59,10 @@ describe('TasksService', () => {
 
       expect(prisma.task.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ creatorId: 'collab-1', assignedById: null }),
+          data: expect.objectContaining({
+            creatorId: 'collab-1',
+            assignedById: null,
+          }),
         }),
       );
     });
@@ -68,62 +71,106 @@ describe('TasksService', () => {
       const collab = makeUser(Role.COLLABORATOR, 'collab-1');
       prisma.task.create.mockResolvedValue(makeTask());
 
-      await service.create(collab, { title: 't', description: 'd', creatorId: 'someone-else' });
+      await service.create(collab, {
+        title: 't',
+        description: 'd',
+        creatorId: 'someone-else',
+      });
 
       expect(prisma.task.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ creatorId: 'collab-1', assignedById: null }),
+          data: expect.objectContaining({
+            creatorId: 'collab-1',
+            assignedById: null,
+          }),
         }),
       );
     });
 
     it('permet à un manager d’assigner une tâche à un collaborateur', async () => {
       const manager = makeUser(Role.MANAGER, 'manager-1');
-      prisma.user.findUnique.mockResolvedValue({ id: 'collab-2', role: Role.COLLABORATOR });
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'collab-2',
+        role: Role.COLLABORATOR,
+      });
       prisma.task.create.mockResolvedValue(makeTask());
 
-      await service.create(manager, { title: 't', description: 'd', creatorId: 'collab-2' });
+      await service.create(manager, {
+        title: 't',
+        description: 'd',
+        creatorId: 'collab-2',
+      });
 
       expect(prisma.task.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ creatorId: 'collab-2', assignedById: 'manager-1' }),
+          data: expect.objectContaining({
+            creatorId: 'collab-2',
+            assignedById: 'manager-1',
+          }),
         }),
       );
     });
 
     it('refuse d’assigner à quelqu’un qui n’est pas collaborateur', async () => {
       const manager = makeUser(Role.MANAGER, 'manager-1');
-      prisma.user.findUnique.mockResolvedValue({ id: 'other-manager', role: Role.MANAGER });
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'other-manager',
+        role: Role.MANAGER,
+      });
 
       await expect(
-        service.create(manager, { title: 't', description: 'd', creatorId: 'other-manager' }),
+        service.create(manager, {
+          title: 't',
+          description: 'd',
+          creatorId: 'other-manager',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('permet à un admin d’assigner une tâche à un manager', async () => {
       const admin = makeUser(Role.ADMINISTRATOR, 'admin-1');
-      prisma.user.findUnique.mockResolvedValue({ id: 'manager-2', role: Role.MANAGER });
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'manager-2',
+        role: Role.MANAGER,
+      });
       prisma.task.create.mockResolvedValue(makeTask());
 
-      await service.create(admin, { title: 't', description: 'd', creatorId: 'manager-2' });
+      await service.create(admin, {
+        title: 't',
+        description: 'd',
+        creatorId: 'manager-2',
+      });
 
       expect(prisma.task.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ creatorId: 'manager-2', assignedById: 'admin-1' }),
+          data: expect.objectContaining({
+            creatorId: 'manager-2',
+            assignedById: 'admin-1',
+          }),
         }),
       );
     });
 
     it('permet à un admin d’assigner une tâche à un collaborateur', async () => {
       const admin = makeUser(Role.ADMINISTRATOR, 'admin-1');
-      prisma.user.findUnique.mockResolvedValue({ id: 'collab-3', role: Role.COLLABORATOR });
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'collab-3',
+        role: Role.COLLABORATOR,
+      });
       prisma.task.create.mockResolvedValue(makeTask());
 
-      await service.create(admin, { title: 't', description: 'd', creatorId: 'collab-3' });
+      await service.create(admin, {
+        title: 't',
+        description: 'd',
+        creatorId: 'collab-3',
+      });
 
       expect(prisma.task.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ creatorId: 'collab-3', assignedById: 'admin-1' }),
+          data: expect.objectContaining({
+            creatorId: 'collab-3',
+            assignedById: 'admin-1',
+          }),
         }),
       );
     });
@@ -133,7 +180,11 @@ describe('TasksService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.create(manager, { title: 't', description: 'd', creatorId: 'ghost' }),
+        service.create(manager, {
+          title: 't',
+          description: 'd',
+          creatorId: 'ghost',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -141,26 +192,36 @@ describe('TasksService', () => {
   describe('update / remove (getManagedTask)', () => {
     it('autorise le créateur sur une tâche DRAFT', async () => {
       const collab = makeUser(Role.COLLABORATOR, 'collab-1');
-      prisma.task.findUnique.mockResolvedValue(makeTask({ status: TaskStatus.DRAFT }));
+      prisma.task.findUnique.mockResolvedValue(
+        makeTask({ status: TaskStatus.DRAFT }),
+      );
       prisma.task.update.mockResolvedValue(makeTask());
 
-      await expect(service.update('task-1', collab, { title: 'x' })).resolves.toBeDefined();
+      await expect(
+        service.update('task-1', collab, { title: 'x' }),
+      ).resolves.toBeDefined();
     });
 
     it('refuse le créateur sur une tâche APPROVED', async () => {
       const collab = makeUser(Role.COLLABORATOR, 'collab-1');
-      prisma.task.findUnique.mockResolvedValue(makeTask({ status: TaskStatus.APPROVED }));
-
-      await expect(service.update('task-1', collab, { title: 'x' })).rejects.toThrow(
-        ForbiddenException,
+      prisma.task.findUnique.mockResolvedValue(
+        makeTask({ status: TaskStatus.APPROVED }),
       );
+
+      await expect(
+        service.update('task-1', collab, { title: 'x' }),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('refuse un collaborateur qui n’est pas le créateur', async () => {
       const collab = makeUser(Role.COLLABORATOR, 'collab-2');
-      prisma.task.findUnique.mockResolvedValue(makeTask({ creatorId: 'collab-1' }));
+      prisma.task.findUnique.mockResolvedValue(
+        makeTask({ creatorId: 'collab-1' }),
+      );
 
-      await expect(service.remove('task-1', collab)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove('task-1', collab)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('autorise le manager qui a assigné la tâche', async () => {
@@ -171,7 +232,9 @@ describe('TasksService', () => {
       prisma.task.delete.mockResolvedValue(undefined);
 
       await expect(service.remove('task-1', manager)).resolves.toBeUndefined();
-      expect(prisma.task.delete).toHaveBeenCalledWith({ where: { id: 'task-1' } });
+      expect(prisma.task.delete).toHaveBeenCalledWith({
+        where: { id: 'task-1' },
+      });
     });
 
     it('refuse un manager qui n’a pas assigné la tâche', async () => {
@@ -180,12 +243,16 @@ describe('TasksService', () => {
         makeTask({ status: TaskStatus.DRAFT, assignedById: 'manager-1' }),
       );
 
-      await expect(service.remove('task-1', manager)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove('task-1', manager)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('l’admin peut agir même hors des statuts éditables', async () => {
       const admin = makeUser(Role.ADMINISTRATOR, 'admin-1');
-      prisma.task.findUnique.mockResolvedValue(makeTask({ status: TaskStatus.APPROVED }));
+      prisma.task.findUnique.mockResolvedValue(
+        makeTask({ status: TaskStatus.APPROVED }),
+      );
       prisma.task.delete.mockResolvedValue(undefined);
 
       await expect(service.remove('task-1', admin)).resolves.toBeUndefined();
@@ -193,17 +260,21 @@ describe('TasksService', () => {
 
     it('renvoie NotFoundException si la tâche n’existe pas', async () => {
       prisma.task.findUnique.mockResolvedValue(null);
-      await expect(service.update('ghost', makeUser(Role.ADMINISTRATOR), {})).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('ghost', makeUser(Role.ADMINISTRATOR), {}),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('submit', () => {
     it('autorise le créateur à soumettre depuis DRAFT', async () => {
       const collab = makeUser(Role.COLLABORATOR, 'collab-1');
-      prisma.task.findUnique.mockResolvedValue(makeTask({ status: TaskStatus.DRAFT }));
-      prisma.task.update.mockResolvedValue(makeTask({ status: TaskStatus.SUBMITTED }));
+      prisma.task.findUnique.mockResolvedValue(
+        makeTask({ status: TaskStatus.DRAFT }),
+      );
+      prisma.task.update.mockResolvedValue(
+        makeTask({ status: TaskStatus.SUBMITTED }),
+      );
 
       await service.submit('task-1', collab);
 
@@ -224,14 +295,20 @@ describe('TasksService', () => {
         makeTask({ status: TaskStatus.DRAFT, assignedById: 'manager-1' }),
       );
 
-      await expect(service.submit('task-1', manager)).rejects.toThrow(ForbiddenException);
+      await expect(service.submit('task-1', manager)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('refuse de soumettre une tâche déjà APPROVED', async () => {
       const collab = makeUser(Role.COLLABORATOR, 'collab-1');
-      prisma.task.findUnique.mockResolvedValue(makeTask({ status: TaskStatus.APPROVED }));
+      prisma.task.findUnique.mockResolvedValue(
+        makeTask({ status: TaskStatus.APPROVED }),
+      );
 
-      await expect(service.submit('task-1', collab)).rejects.toThrow(ForbiddenException);
+      await expect(service.submit('task-1', collab)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -241,13 +318,18 @@ describe('TasksService', () => {
       prisma.task.findUnique.mockResolvedValue(
         makeTask({ status: TaskStatus.SUBMITTED, assignedById: 'manager-1' }),
       );
-      prisma.task.update.mockResolvedValue(makeTask({ status: TaskStatus.APPROVED }));
+      prisma.task.update.mockResolvedValue(
+        makeTask({ status: TaskStatus.APPROVED }),
+      );
 
       await service.validate('task-1', manager);
 
       expect(prisma.task.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ status: TaskStatus.APPROVED, validatorId: 'manager-1' }),
+          data: expect.objectContaining({
+            status: TaskStatus.APPROVED,
+            validatorId: 'manager-1',
+          }),
         }),
       );
     });
@@ -258,7 +340,9 @@ describe('TasksService', () => {
         makeTask({ status: TaskStatus.SUBMITTED, assignedById: null }),
       );
 
-      await expect(service.validate('task-1', manager)).rejects.toThrow(ForbiddenException);
+      await expect(service.validate('task-1', manager)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('refuse un manager sur une tâche assignée par un autre manager', async () => {
@@ -267,9 +351,9 @@ describe('TasksService', () => {
         makeTask({ status: TaskStatus.SUBMITTED, assignedById: 'manager-1' }),
       );
 
-      await expect(service.reject('task-1', manager, { rejectionReason: 'non' })).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.reject('task-1', manager, { rejectionReason: 'non' }),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('refuse un manager sur une tâche assignée par l’admin', async () => {
@@ -278,7 +362,9 @@ describe('TasksService', () => {
         makeTask({ status: TaskStatus.SUBMITTED, assignedById: 'admin-1' }),
       );
 
-      await expect(service.validate('task-1', manager)).rejects.toThrow(ForbiddenException);
+      await expect(service.validate('task-1', manager)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('l’admin peut valider n’importe quelle tâche soumise', async () => {
@@ -286,7 +372,9 @@ describe('TasksService', () => {
       prisma.task.findUnique.mockResolvedValue(
         makeTask({ status: TaskStatus.SUBMITTED, assignedById: 'manager-1' }),
       );
-      prisma.task.update.mockResolvedValue(makeTask({ status: TaskStatus.APPROVED }));
+      prisma.task.update.mockResolvedValue(
+        makeTask({ status: TaskStatus.APPROVED }),
+      );
 
       await expect(service.validate('task-1', admin)).resolves.toBeDefined();
     });
@@ -297,7 +385,9 @@ describe('TasksService', () => {
         makeTask({ status: TaskStatus.DRAFT, assignedById: 'manager-1' }),
       );
 
-      await expect(service.validate('task-1', manager)).rejects.toThrow(ForbiddenException);
+      await expect(service.validate('task-1', manager)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -334,7 +424,9 @@ describe('TasksService', () => {
       await service.findAll(manager, { page: 1, pageSize: 50 });
 
       const { where } = prisma.task.findMany.mock.calls[0][0];
-      expect(where.OR).toEqual(expect.arrayContaining([{ creatorId: 'manager-1' }]));
+      expect(where.OR).toEqual(
+        expect.arrayContaining([{ creatorId: 'manager-1' }]),
+      );
     });
   });
 });

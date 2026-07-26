@@ -145,7 +145,7 @@ export class UsersService {
     });
     if (activeAdminCount <= 1) {
       throw new ForbiddenException(
-        "Impossible de retirer les droits du dernier administrateur actif.",
+        'Impossible de retirer les droits du dernier administrateur actif.',
       );
     }
   }

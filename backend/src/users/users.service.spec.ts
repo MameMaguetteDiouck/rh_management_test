@@ -108,7 +108,9 @@ describe('UsersService', () => {
       prisma.user.count.mockResolvedValue(2);
       prisma.user.update.mockResolvedValue(makeUser({ role: Role.MANAGER }));
 
-      await expect(service.update('admin-1', { role: Role.MANAGER })).resolves.toBeDefined();
+      await expect(
+        service.update('admin-1', { role: Role.MANAGER }),
+      ).resolves.toBeDefined();
       expect(prisma.user.update).toHaveBeenCalled();
     });
 
@@ -118,7 +120,9 @@ describe('UsersService', () => {
       );
       prisma.user.count.mockResolvedValue(1);
 
-      await expect(service.deactivate('admin-1')).rejects.toThrow(ForbiddenException);
+      await expect(service.deactivate('admin-1')).rejects.toThrow(
+        ForbiddenException,
+      );
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
 
@@ -132,8 +136,12 @@ describe('UsersService', () => {
     });
 
     it('n’impacte pas la désactivation d’un simple collaborateur', async () => {
-      prisma.user.findUnique.mockResolvedValue(makeUser({ role: Role.COLLABORATOR }));
-      prisma.user.update.mockResolvedValue(makeUser({ deactivatedAt: new Date() }));
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ role: Role.COLLABORATOR }),
+      );
+      prisma.user.update.mockResolvedValue(
+        makeUser({ deactivatedAt: new Date() }),
+      );
 
       await expect(service.deactivate('user-1')).resolves.toBeDefined();
       expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({
@@ -145,7 +153,9 @@ describe('UsersService', () => {
   describe('changeOwnPassword', () => {
     it('refuse si le mot de passe actuel est incorrect', async () => {
       const hashed = await bcrypt.hash('CorrectPassword1', 10);
-      prisma.user.findUniqueOrThrow.mockResolvedValue(makeUser({ password: hashed }));
+      prisma.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ password: hashed }),
+      );
 
       await expect(
         service.changeOwnPassword('user-1', {
@@ -157,7 +167,9 @@ describe('UsersService', () => {
 
     it('met à jour le mot de passe et invalide les sessions si le mot de passe actuel est correct', async () => {
       const hashed = await bcrypt.hash('CorrectPassword1', 10);
-      prisma.user.findUniqueOrThrow.mockResolvedValue(makeUser({ password: hashed }));
+      prisma.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ password: hashed }),
+      );
       prisma.user.update.mockResolvedValue(makeUser());
 
       await service.changeOwnPassword('user-1', {
@@ -165,7 +177,9 @@ describe('UsersService', () => {
         newPassword: 'NewPassword1',
       });
 
-      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+      });
       const updateCall = prisma.user.update.mock.calls[0][0];
       expect(updateCall.data.mustChangePassword).toBe(false);
     });

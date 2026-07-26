@@ -14,7 +14,9 @@ function makeContext(role: Role): ExecutionContext {
 }
 
 function makeReflector(returnValue: Role[] | undefined): Reflector {
-  return { getAllAndOverride: jest.fn().mockReturnValue(returnValue) } as unknown as Reflector;
+  return {
+    getAllAndOverride: jest.fn().mockReturnValue(returnValue),
+  } as unknown as Reflector;
 }
 
 describe('RolesGuard', () => {
@@ -29,7 +31,9 @@ describe('RolesGuard', () => {
   });
 
   it('autorise si le rôle de l’utilisateur fait partie des rôles requis', () => {
-    const guard = new RolesGuard(makeReflector([Role.ADMINISTRATOR, Role.MANAGER]));
+    const guard = new RolesGuard(
+      makeReflector([Role.ADMINISTRATOR, Role.MANAGER]),
+    );
     expect(guard.canActivate(makeContext(Role.MANAGER))).toBe(true);
   });
 

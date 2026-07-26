@@ -46,11 +46,12 @@ describe('AuthService', () => {
       verifyAsync: jest.fn(),
     };
     config = {
-      get: jest.fn((key: string) =>
-        ({
-          JWT_REFRESH_SECRET: 'refresh-secret',
-          JWT_REFRESH_EXPIRATION: '7d',
-        })[key],
+      get: jest.fn(
+        (key: string) =>
+          ({
+            JWT_REFRESH_SECRET: 'refresh-secret',
+            JWT_REFRESH_EXPIRATION: '7d',
+          })[key],
       ),
     };
     service = new AuthService(prisma as any, jwtService as any, config as any);
@@ -65,7 +66,9 @@ describe('AuthService', () => {
     });
 
     it('refuse un compte désactivé', async () => {
-      prisma.user.findUnique.mockResolvedValue(makeUser({ deactivatedAt: new Date() }));
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ deactivatedAt: new Date() }),
+      );
       await expect(
         service.login({ email: 'user@rh.local', password: 'x' }),
       ).rejects.toThrow(UnauthorizedException);
@@ -101,21 +104,29 @@ describe('AuthService', () => {
   describe('refresh', () => {
     it('refuse un token dont la signature est invalide', async () => {
       jwtService.verifyAsync.mockRejectedValue(new Error('bad signature'));
-      await expect(service.refresh('bad-token')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('bad-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('refuse un token qui n’est plus en base (déjà consommé par la rotation)', async () => {
       jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1' });
       prisma.refreshToken.findFirst.mockResolvedValue(null);
-      await expect(service.refresh('some-token')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('some-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('refuse si le compte a été désactivé depuis', async () => {
       jwtService.verifyAsync.mockResolvedValue({ sub: 'user-1' });
       prisma.refreshToken.findFirst.mockResolvedValue({ id: 'rt-1' });
       prisma.refreshToken.delete.mockResolvedValue(undefined);
-      prisma.user.findUniqueOrThrow.mockResolvedValue(makeUser({ deactivatedAt: new Date() }));
-      await expect(service.refresh('some-token')).rejects.toThrow(UnauthorizedException);
+      prisma.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ deactivatedAt: new Date() }),
+      );
+      await expect(service.refresh('some-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('effectue la rotation : supprime l’ancien token et en émet un nouveau', async () => {
@@ -127,7 +138,9 @@ describe('AuthService', () => {
 
       await service.refresh('some-token');
 
-      expect(prisma.refreshToken.delete).toHaveBeenCalledWith({ where: { id: 'rt-1' } });
+      expect(prisma.refreshToken.delete).toHaveBeenCalledWith({
+        where: { id: 'rt-1' },
+      });
       expect(prisma.refreshToken.create).toHaveBeenCalledTimes(1);
     });
   });
